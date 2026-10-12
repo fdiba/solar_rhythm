@@ -1,0 +1,38 @@
+cff-version: 1.2.0
+message: "If you use or refer to this work, please cite it as below."
+type: software
+title: "Solar Rhythm: the browser instrument of The 25th Cycle"
+abstract: >-
+  Browser instrument that turns the daily sunspot record (SILSO, 1818 to today)
+  into a drone, percussion, timbre and form for a Eurorack system, through Web
+  MIDI and an Expert Sleepers FH-2. A drone runs through every phase of the solar
+  cycle; over it, each phase has its own percussion (Crater, Kraken and the hits
+  of a Make Noise Strega), whose number of hits and timbre follow the data, each
+  voice on its own loop length. Part of the audiovisual piece The 25th Cycle.
+authors:
+  - family-names: "Di Bartolo"
+    given-names: "Florent"
+    orcid: "https://orcid.org/0000-0002-4910-6936"
+    affiliation: "Université Gustave Eiffel, LISAA"
+version: "SOLAR-v034"
+date-released: 2026-10-12
+license: CC-BY-NC-SA-4.0
+repository-code: "https://github.com/fdiba/solar_rhythm"
+url: "https://github.com/fdiba/solar_rhythm"
+keywords:
+  - sunspot number
+  - solar cycle
+  - SILSO
+  - data sonification
+  - generative rhythm
+  - Eurorack
+  - Web MIDI
+  - digital arts
+references:
+  - type: data
+    title: "Total daily sunspot number, version 2.0"
+    authors:
+      - name: "WDC-SILSO, Royal Observatory of Belgium, Brussels"
+    doi: "10.24414/qnza-ac80"
+    url: "https://www.sidc.be/SILSO/datafiles"
+    license: CC-BY-NC-4.0
