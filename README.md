@@ -5,7 +5,7 @@ daily sunspot record, from 1818 to today: the drone, the percussion, the timbres
 and the form of the piece all come from the data.
 
 This repository contains the browser instrument that drives the rack:
-**`solar_rhythm_v001.html`** (version `SOLAR-v034`), available in **English and
+**`solar_rhythm_v001.html`** (version `SOLAR-v036`), available in **English and
 French** (FR / EN button, or `?lang=en` / `?lang=fr` in the address).
 Repository: [github.com/fdiba/solar_rhythm](https://github.com/fdiba/solar_rhythm).
 
@@ -26,13 +26,14 @@ Repository: [github.com/fdiba/solar_rhythm](https://github.com/fdiba/solar_rhyth
   | kick | WMD Crater | local peaks of activity, above the 27-day mean |
   | snare | WMD Kraken | rises from one day to the next |
   | Strega hits | Make Noise Strega | bursts above the 27-day mean |
+  | Fracture | Fracture (dry, out of the reverb) | spotless days, in states 1 and 2 |
 
   Every phrase of 8 bars, the page reads the 32 days the phrase will cover: the
   share of days that pass a voice's test sets its number of hits, capped by the
   state of the cycle, and the hits fill the positions of the voice's own loop
-  (Crater 16 steps, Kraken 16 then 12, Strega 18), so that the voices drift
+  (Crater 16 steps, Kraken 16 then 12, Strega 18, Fracture 32), so that the voices drift
   against one another. Each phase has its own percussive character: near minimum,
-  the Kraken alone, its hits repeated by the Strega; then sparse tonal swells of
+  the Kraken alone, its hits repeated by the Strega, and the Fracture on spotless days; then sparse tonal swells of
   the Strega, which grow more frequent with the Kraken; then dry, dull Crater
   knocks; at maximum, all voices with bright, short timbres. On bars 4 and 8 of
   each phrase, each voice mutates: its least important hit moves to the position
@@ -66,12 +67,14 @@ Repository: [github.com/fdiba/solar_rhythm](https://github.com/fdiba/solar_rhyth
 | 1 | gate, channel 3, note 1 | WMD Crater `TRIG` (kick and drone) |
 | 2 | gate, channel 3, note 2 | WMD Kraken `HEAD` (snare) |
 | 3 | `direct control`, CC 3 channel 4 | WMD Kraken `SHELL` (set on every snare hit) |
+| 5 | gate, channel 3, note 5 | Fracture `TRIG` |
 | 7 | MIDI/CV converter, channel 7 | WMD Crater `1V/oct` and, through a multiple, Strega `Tonic 1V/Oct` |
 | 8 | LFO, Base 96 × 3 | WMD Kraken `VELOCITY` |
 
 Expander outputs 9 to 24 drive the mix and effects (XAOC Hrad and Praga, Desmodus
-Versio): gates on channel 3 and `direct control` CVs on channel 4, note or CC =
-output number (output 21: CC 25). Outputs 26 to 29 of the third FHX-8CV drive the
+Versio) and the Fracture `DENSITY` (output 22, set on every Fracture hit: very small
+after a close hit, larger after a long gap): gates on channel 3 and `direct control`
+CVs on channel 4, note or CC = output number (output 21: CC 25). Outputs 26 to 29 of the third FHX-8CV drive the
 Strega `Activation`, `Decay`, `Filter` and `Tones` CV inputs (0-5 V, CC 26 to 29,
 14-bit). The full list is in the page, in the *Patching* and *Test bench*
 sections. All gates and clocks are set to 0-5 V.
@@ -106,7 +109,7 @@ Use the **Cite this repository** button (top right of the GitHub page): it reads
 [`CITATION.cff`](CITATION.cff) and gives the reference in APA and BibTeX.
 
 > Di Bartolo, F. (2026). *Solar Rhythm: the browser instrument of The 25th Cycle*
-> (version SOLAR-v034) [Computer software]. https://github.com/fdiba/solar_rhythm
+> (version SOLAR-v036) [Computer software]. https://github.com/fdiba/solar_rhythm
 
 When using the sunspot data, cite SILSO as well (see *Data* above).
 
