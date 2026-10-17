@@ -5,7 +5,7 @@ daily sunspot record, from 1818 to today: the drone, the percussion, the timbres
 and the form of the piece all come from the data.
 
 This repository contains the browser instrument that drives the rack:
-**`solar_rhythm_v001.html`** (version `SOLAR-v041`), available in **English and
+**`solar_rhythm_v001.html`** (version `SOLAR-v044`), available in **English and
 French** (FR / EN button, or `?lang=en` / `?lang=fr` in the address).
 Repository: [github.com/fdiba/solar_rhythm](https://github.com/fdiba/solar_rhythm).
 
@@ -112,7 +112,7 @@ Use the **Cite this repository** button (top right of the GitHub page): it reads
 [`CITATION.cff`](CITATION.cff) and gives the reference in APA and BibTeX.
 
 > Di Bartolo, F. (2026). *Solar Rhythm: the browser instrument of The 25th Cycle*
-> (version SOLAR-v041) [Computer software]. https://github.com/fdiba/solar_rhythm
+> (version SOLAR-v044) [Computer software]. https://github.com/fdiba/solar_rhythm
 
 When using the sunspot data, cite SILSO as well (see *Data* above).
 

@@ -216,7 +216,7 @@ section.rh{grid-column:1/-1}
   <h1>The 25th Cycle</h1>
   <span class="sub" data-i18n="sub"></span>
   <span class="langs"><button class="seg" data-lang="fr">FR</button><button class="seg" data-lang="en">EN</button></span>
-  <span class="ver">SOLAR-v041</span>
+  <span class="ver">SOLAR-v044</span>
 </header>
 
 <main>
@@ -496,15 +496,6 @@ section.rh{grid-column:1/-1}
     <button id="pushCV" data-i18n="b_push"></button>
     <span id="benchInfo" class="degs"></span>
   </div>
-  <div class="napbox">
-    <div class="naphd"><span data-i18n="b_nappe"></span> <span id="nappeInfo" class="degs"></span></div>
-    <div class="napgrid">
-      <span data-i18n="b_build"></span><span><input type="number" id="napBuild" min="0" max="64" step="0.25" value="1"> <span data-i18n="meas_abbr"></span></span>
-      <span data-i18n="b_regen"></span><span><input type="number" id="napRegen" min="0" max="127" step="1" value="90"></span>
-      <span data-i18n="b_down"></span><span><input type="number" id="napDown" min="0.25" max="64" step="0.25" value="4"> <span data-i18n="meas_abbr"></span></span>
-      <span data-i18n="b_up"></span><span><input type="number" id="napUp" min="0.25" max="64" step="0.25" value="1"> <span data-i18n="meas_abbr"></span></span>
-    </div>
-  </div>
   <table class="bench" id="bench"></table>
   <p class="hint" data-i18n-html="b_hint"></p>
 </section>
@@ -543,7 +534,7 @@ section.rh{grid-column:1/-1}
 
 <script>
 /* =========================================================================
-   THE 25th CYCLE · SOLAR-v041 · solar_rhythm_v001.html
+   THE 25th CYCLE · SOLAR-v044 · solar_rhythm_v001.html
    Le rythme est fabrique a partir des donnees SILSO : une mesure = une fenetre
    de jours consecutifs, chaque voix frappe sur les jours qui passent son test.
 
@@ -562,7 +553,7 @@ section.rh{grid-column:1/-1}
      Silso    tete = premier jour de la fenetre ; boucles
      Rhythm   fenetre de jours -> motifs des voix -> triggers et frappes de la Strega
      Mod      sorties de timbre en CC 14 bits
-     Forme    5 etats sur un cycle (rythme -> nappe)
+     Forme    5 etats sur un cycle
      Strega   la Strega : drone, frappes, timbres par phase
      Plot     vues d'ensemble et du cycle
      UI       affichage et commandes
@@ -580,7 +571,7 @@ section.rh{grid-column:1/-1}
 
 /* ---------------------------------------------------------------- config */
 const CFG = {
-  version: 'SOLAR-v041',
+  version: 'SOLAR-v044',
   bpm: 120,
   stepsPerMeasure: 16,      // une mesure = 16 pas = 16 jours de la fenetre
   sendClock: true,          // MIDI clock F8 / FA / FC : les horloges du FH-2 en dependent
@@ -656,7 +647,6 @@ const CFG = {
 
   // ---- banc de test des sorties d'expander 9 a 24
   bench: { gateCh: 3, ccCh: 4 },
-  nappe: { buildMeas: 1, downMeas: 4, upMeas: 1, regenCap: 90 },
 
   // ---- SILSO
   silso: {
@@ -740,7 +730,8 @@ const CFG = {
     // Sortie 8CV n°3 · 1 (25) sur le CC 9 : le CC 25 est pris par le TONE du Desmodus (sortie 21)
     rBlend: { n: 25, cc: 9, eps: 24 },
     follow: 0.4,            // part de la moyenne 27 j dans la matiere de fond
-    filterSpan: 24,         // ecart du filtre (CC) autour de la valeur de l'etat, selon la moyenne 27 j
+    // ecart du filtre selon la moyenne 27 j, ouverture du filtre par frappe, couleur (Tones) par frappe :
+    // lignes s_fspan, s_fswell, s_tjit du tableau (une valeur par etat)
     swellMs: [1200, 220],   // retombee d'une frappe : jour faible -> longue, jour charge -> courte
     smooth: 2,              // mesures : lissage entre deux etats
     storageKey: 'the25thcycle.strega.solo',   // reglages memorises dans le navigateur
@@ -752,6 +743,9 @@ const CFG = {
       { key: 's_decay',  v: [ 96,  92,  80,  66,  52] },   // Decay : repetitions longues au minimum
       { key: 's_filter', v: [ 40,  52,  66,  82,  96] },   // Filter : s'ouvre avec le soleil
       { key: 's_tones',  out: 29, v: [16, 40, 64, 88, 112] },   // Tones : une couleur par phase
+      { key: 's_fspan',  v: [ 24,  40,  40,  40,  40] },   // Filter : ecart total selon la moyenne 27 j (± la moitie)
+      { key: 's_fswell', v: [  0,  24,  24,  24,  24] },   // Filter : ouverture a chaque frappe, retombee comme l'activation
+      { key: 's_tjit',   v: [  0,  16,  16,  16,  16] },   // Tones : ecart par frappe selon l'ecart du jour a sa moyenne 27 j
       // percussion : plafonds de frappes par boucle
       { key: 's_hits',   voice: 'strega', max: true, v: [0, 2, 4, 5, 7] },  // frappes de la Strega, des la phase 2
       { key: 's_kick',   voice: 'kick',  max: true, v: [0, 0, 0, 3, 3] },   // Crater sec (le drone joue partout)
@@ -1127,8 +1121,11 @@ const TEXTS = {
     s_act: 'activation de fond', s_act_ds: 'matière continue, pondérée par la moyenne 27 jours',
     s_swell: 'frappe', s_swell_ds: 'hauteur d’un gonflement, ajoutée au fond',
     s_decay: 'Decay', s_decay_ds: 'longueur des répétitions (Strega et Kraken répété)',
-    s_filter: 'Filter', s_filter_ds: 'ouverture, ±12 selon la moyenne 27 jours',
+    s_filter: 'Filter', s_filter_ds: 'ouverture de base de la phase',
     s_tones: 'Tones', s_tones_ds: 'une couleur par phase',
+    s_fspan: 'Filter : moyenne 27 j', s_fspan_ds: 'écart total selon la moyenne 27 jours (± la moitié)',
+    s_fswell: 'Filter : frappe', s_fswell_ds: 'ouverture à chaque frappe, se referme comme l’activation',
+    s_tjit: 'Tones : frappe', s_tjit_ds: 'écart par frappe selon l’écart du jour à sa moyenne 27 jours',
     s_hits: 'frappes de la Strega', s_hits_ds: 'test « bouffée », boucle de 18 pas',
     s_kick: 'Crater sec', s_kick_ds: 'le drone joue dans toutes les phases',
     s_snare: 'Kraken', s_snare_ds: 'boucle de 16 pas, puis 12 à l’état 5',
@@ -1150,8 +1147,7 @@ const TEXTS = {
 
     // forme
     f_title: 'Forme · 5 états', f_grid: 'Grille', f_trans: 'Transition',
-    f_prev: '← début de l’état / état précédent', f_next_btn: 'changement d’état suivant →', f_change: '<br>prochain changement : {d} → état <b>{k}</b>',
-    f_creux: 'creux (nappe) sous', f_stopdry: 'STOP coupe la réverbe', f_drone: 'drone : le Crater excite la réverbe à intervalles irréguliers, en notes tenues, dans toutes les phases', f_reset: 'Revenir aux valeurs du fichier',
+    f_prev: '← début de l’état / état précédent', f_next_btn: 'changement d’état suivant →', f_change: '<br>prochain changement : {d} → état <b>{k}</b>', f_creux: 'creux (nappe) sous', f_stopdry: 'STOP coupe la réverbe', f_drone: 'drone : le Crater excite la réverbe à intervalles irréguliers, en notes tenues, dans toutes les phases', f_reset: 'Revenir aux valeurs du fichier',
     f_creux_on: ' · <b>creux du minimum : nappe figée</b>', f_creux_next: ' · creux : nappe à la fin de la transition ou au prochain repère',
     f_throw: 'dub throws', f_throw_ds: 'envois 13 et 15 ouverts sur certaines frappes',
     f_auto: 'Automatique (SILSO)', f_manual: 'Manuel',
@@ -1185,9 +1181,7 @@ const TEXTS = {
     // banc
     b_title: 'Banc de test : sorties 9 à 24', b_gates: 'Gates', b_cv: 'CV (direct level)',
     b_note_eq: 'note = n° de sortie', b_cc_eq: 'CC = n° de sortie', b_defaults: 'Valeurs par défaut', b_push: 'Renvoyer les CV',
-    b_held: 'gates hauts :', b_none: 'aucun gate haut', b_nappe: 'Nappe (gate FSU)', b_build: 'montée', b_regen: 'Regen max',
-    b_down: 'descente', b_up: 'remontée', b_ph_build: 'montée', b_ph_down: 'descente', b_ph_up: 'remontée',
-    b_nappe_on: '<b>nappe</b> : FSU tenu, vol à 0', b_nappe_off: 'rythme : valeurs par défaut',
+    b_held: 'gates hauts :', b_none: 'aucun gate haut',
     b_hint: 'Un CV à <b>0</b> ferme ce qu’il pilote : un <code>vol</code> du Praga tombe au silence, un envoi du Hrad se coupe. Côté FH-2 : une ligne <b>Triggers</b> par gate (<code>Trig Type = Gate</code>, canal ci-dessus, note = numéro de sortie) et un <b>Mapping</b> <code>direct control</code> par CV (canal ci-dessus, CC = numéro de sortie, sauf 21 : CC 25). Curseurs verts : timbres SILSO ; bleus : forme.',
     b_l9: 'Hrad active 1+2 : mute Strega (canal 1) et Fracture (canal 2)',
     b_l10: 'Quad VCA CV 1 : niveau du Fracture (bloc Strega, par phase)',
@@ -1197,7 +1191,7 @@ const TEXTS = {
     b_l14: 'Kraken SNARES : plus haut = plus de bruit, queue plus longue. Timbre SILSO (27 j)',
     b_l15: 'Hrad aux cv 3 : envoi Kraken (copie du Kraken dans aux ins 3). Forme, throws',
     b_l16: 'Hrad aux cv 4 : envoi Crater (copie du Crater dans aux ins 4, pré-fader). Drone à l’état 1. Forme',
-    b_l17: 'Desmodus FSU : rythme / nappe. ON : le Regen monte, puis FSU et descente des vol. Forme (état 5)',
+    b_l17: 'Desmodus FSU : gate (à la main, ou par la forme au creux du minimum si la case de l’état 1 est cochée)',
     b_l18: 'Desmodus Size : 0 = le potard seul décide. Forme',
     b_l19: 'Desmodus Regen : 0 = le potard seul décide. Forme',
     b_l20: 'Praga vol canal 4 : Crater. 102 = 8 V = 0 dB. Forme',
@@ -1301,8 +1295,11 @@ const TEXTS = {
     s_act: 'background activation', s_act_ds: 'continuous matter, weighted by the 27-day mean',
     s_swell: 'hit', s_swell_ds: 'height of a swell, added to the background',
     s_decay: 'Decay', s_decay_ds: 'length of the repeats (Strega and repeated Kraken)',
-    s_filter: 'Filter', s_filter_ds: 'opening, ±12 following the 27-day mean',
+    s_filter: 'Filter', s_filter_ds: 'base opening of the phase',
     s_tones: 'Tones', s_tones_ds: 'one colour per phase',
+    s_fspan: 'Filter: 27-day mean', s_fspan_ds: 'total range following the 27-day mean (± half)',
+    s_fswell: 'Filter: hit', s_fswell_ds: 'opens on every hit, closes like the activation',
+    s_tjit: 'Tones: hit', s_tjit_ds: 'per-hit offset from the day’s deviation from its 27-day mean',
     s_hits: 'Strega hits', s_hits_ds: '“burst” test, 18-step loop',
     s_kick: 'dry Crater', s_kick_ds: 'the drone plays in every phase',
     s_snare: 'Kraken', s_snare_ds: '16-step loop, then 12 in state 5',
@@ -1322,8 +1319,7 @@ const TEXTS = {
     cv_title: 'SILSO · current cycle',
 
     f_title: 'Form · 5 states', f_grid: 'Grid', f_trans: 'Transition',
-    f_prev: '← start of state / previous state', f_next_btn: 'next state change →', f_change: '<br>next change: {d} → state <b>{k}</b>',
-    f_creux: 'trough (wash) below', f_stopdry: 'STOP mutes the reverb', f_drone: 'drone: the Crater excites the reverb at irregular intervals, with held notes, in every phase', f_reset: 'Back to file values',
+    f_prev: '← start of state / previous state', f_next_btn: 'next state change →', f_change: '<br>next change: {d} → state <b>{k}</b>', f_creux: 'trough (wash) below', f_stopdry: 'STOP mutes the reverb', f_drone: 'drone: the Crater excites the reverb at irregular intervals, with held notes, in every phase', f_reset: 'Back to file values',
     f_creux_on: ' · <b>solar minimum trough: frozen wash</b>', f_creux_next: ' · trough: wash at the end of the transition or at the next marker',
     f_throw: 'dub throws', f_throw_ds: 'sends 13 and 15 opened on selected hits',
     f_auto: 'Automatic (SILSO)', f_manual: 'Manual',
@@ -1354,9 +1350,7 @@ const TEXTS = {
 
     b_title: 'Test bench: outputs 9 to 24', b_gates: 'Gates', b_cv: 'CV (direct level)',
     b_note_eq: 'note = output no.', b_cc_eq: 'CC = output no.', b_defaults: 'Defaults', b_push: 'Resend CVs',
-    b_held: 'gates high:', b_none: 'no gate high', b_nappe: 'Wash (FSU gate)', b_build: 'build', b_regen: 'Regen max',
-    b_down: 'fade down', b_up: 'fade up', b_ph_build: 'build', b_ph_down: 'fade down', b_ph_up: 'fade up',
-    b_nappe_on: '<b>wash</b>: FSU held, vol at 0', b_nappe_off: 'rhythm: default values',
+    b_held: 'gates high:', b_none: 'no gate high',
     b_hint: 'A CV at <b>0</b> closes what it drives: a Praga <code>vol</code> goes silent, a Hrad send is cut. On the FH-2: one <b>Triggers</b> row per gate (<code>Trig Type = Gate</code>, channel above, note = output number) and one <code>direct control</code> <b>Mapping</b> per CV (channel above, CC = output number, except 21: CC 25). Green sliders: SILSO timbres; blue: form.',
     b_l9: 'Hrad active 1+2: mute Strega (channel 1) and Fracture (channel 2)',
     b_l10: 'Quad VCA CV 1: Fracture level (Strega block, per phase)',
@@ -1366,7 +1360,7 @@ const TEXTS = {
     b_l14: 'Kraken SNARES: higher = more noise, longer tail. SILSO timbre (27 d)',
     b_l15: 'Hrad aux cv 3: Kraken send (Kraken copy into aux ins 3). Form, throws',
     b_l16: 'Hrad aux cv 4: Crater send (copy of the Crater into aux ins 4, pre-fader). State 1 drone. Form',
-    b_l17: 'Desmodus FSU: rhythm / wash. ON: Regen rises, then FSU and vol fade down. Form (state 5)',
+    b_l17: 'Desmodus FSU: gate (by hand, or by the form in the minimum trough if the state 1 cell is checked)',
     b_l18: 'Desmodus Size: 0 = the knob alone decides. Form',
     b_l19: 'Desmodus Regen: 0 = the knob alone decides. Form',
     b_l20: 'Praga vol channel 4: Crater. 102 = 8 V = 0 dB. Form',
@@ -2390,7 +2384,6 @@ const Forme = {
   go(k, auto, t, prevItems, again) {
     const from = this.cur;
     if (from === k && !this.ramp && !again) { this.fsuTo(this.fsuWanted(k), Clock.running ? t : undefined); return; }
-    UI.nappeStop();                                   // la sequence manuelle du gate 17 s'efface
     if (from !== k) {
       this.dir = from === null ? 0 : Math.sign(k - from) || this.dir;
       this.log.push({ meas: this.meas - 1, from, to: k, auto: !!auto });
@@ -2676,7 +2669,7 @@ const Strega = {
     return {
       act: clamp01(this.val('s_act') / 127 * (1 - F.follow + F.follow * x)),
       dec: clamp01(this.val('s_decay') / 127),
-      fil: clamp01((this.val('s_filter') + F.filterSpan * (x - 0.5)) / 127),
+      fil: clamp01((this.val('s_filter') + this.val('s_fspan') * (x - 0.5)) / 127),
       ton: clamp01(this.val('s_tones') / 127),
       vs: clamp01(this.val('q_strega') / 127),       // Quad VCA, canal 2 (et 3 par cascade)
       vf: clamp01(this.val('q_frac') / 127),         // Quad VCA, canal 1
@@ -2692,32 +2685,40 @@ const Strega = {
   },
 
   // une frappe : hauteur et retombee tirees du jour
+  // la frappe ouvre aussi le filtre (meme retombee) et donne sa couleur a Tones (tenue jusqu'a la suivante)
   hit(t, d) {
     const F = CFG.strega, q = this.dayQ(d);
     const a = this.val('s_swell') / 127 * (0.6 + 0.4 * q);
     if (!(a > 0)) return;
+    if (this.lastT === null) this.update(t);           // frappe au tout premier pas : valeurs de l'etat d'abord
     const tau = F.swellMs[0] - (F.swellMs[0] - F.swellMs[1]) * q;
-    this.env.push({ t, a, tau });
-    this.log.push({ t, a, tau, meas: Rhythm.meas - 1 });
+    this.env.push({ t, a, tau, f: 0.6 + 0.4 * q });
+    this.tonOff = this.val('s_tjit') / 127 * Mod.dayDev(d);
+    this.log.push({ t, a, tau, meas: Rhythm.meas - 1, ton: this.tonOff });
     if (this.log.length > 400) this.log.splice(0, this.log.length - 400);
-    this.out(t, true);                                 // attaque a l'instant de la frappe
+    this.out(t);                                       // attaque a l'instant de la frappe
   },
 
   // somme des frappes en cours a la date t
-  envAt(t) {
+  envAt(t, key) {
     let e = 0;
     this.env = this.env.filter(h => t - h.t < 6 * h.tau);
-    this.env.forEach(h => { if (t >= h.t) e += h.a * Math.exp(-(t - h.t) / h.tau); });
+    this.env.forEach(h => { if (t >= h.t) e += (key ? h[key] : h.a) * Math.exp(-(t - h.t) / h.tau); });
     return e;
   },
 
-  onTick(t) {
-    if (!Silso.ready) return;
+  // lissage des valeurs de l'etat (premier appel apres START : valeurs atteintes d'emblee)
+  update(t) {
     const dt = this.lastT === null ? Infinity : t - this.lastT;
     this.lastT = t;
     const k = 1 - Math.exp(-dt / Math.max(1, CFG.strega.smooth * Rhythm.measMs()));
     const T = this.targets();
     ['act', 'dec', 'fil', 'ton', 'vs', 'vf', 'rb'].forEach(n => { this.cur[n] += (T[n] - this.cur[n]) * k; });
+  },
+
+  onTick(t) {
+    if (!Silso.ready) return;
+    this.update(t);
     this.out(t);
     this.out(t + Clock.tickDur() / 2, true);           // retombee plus fine : deux valeurs par tick
   },
@@ -2727,10 +2728,13 @@ const Strega = {
     // les frappes se logent dans la marge au-dessus du fond, saturation douce (jamais d'ecretage)
     const b = clamp01(this.cur.act), room = Math.max(1e-3, 1 - b);
     this.send(F.act, clamp01(b + room * Math.tanh(this.envAt(t) / room)), t);
+    // filtre : valeur lissee + ouverture des frappes en cours, logee dans la marge au-dessus (saturation douce)
+    const fb = clamp01(this.cur.fil), fr = Math.max(1e-3, 1 - fb), fo = this.val('s_fswell') / 127 * this.envAt(t, 'f');
+    this.send(F.filter, clamp01(fb + fr * Math.tanh(fo / fr)), t);
     if (actOnly) return;
     this.send(F.decay, this.cur.dec, t);
-    this.send(F.filter, this.cur.fil, t);
-    this.send(F.tones, this.cur.ton, t);
+    const tj = this.val('s_tjit') > 0 ? (this.tonOff || 0) : 0;
+    this.send(F.tones, clamp01(this.cur.ton + tj), t);
     if (F.vcaS) this.send(F.vcaS, this.cur.vs, t);
     if (F.vcaF) this.send(F.vcaF, this.cur.vf, t);
     if (F.rBlend) this.send(F.rBlend, this.cur.rb, t);
@@ -2750,7 +2754,7 @@ const Strega = {
   // (Strega, son Sub qui sonne en continu, Fracture) ; START rouvre aux valeurs de l'etat
   silence(t) {
     const F = CFG.strega, when = t === undefined ? performance.now() : t;
-    this.env = [];
+    this.env = []; this.tonOff = 0;
     this.send(F.act, 0, when, true);
     this.send(F.decay, 0, when, true);
     this.send(F.filter, 0, when, true);
@@ -2759,7 +2763,7 @@ const Strega = {
     this.lastT = null;
   },
 
-  onStart() { this.env = []; this.lastT = null; this.last = {}; },
+  onStart() { this.env = []; this.tonOff = 0; this.lastT = null; this.last = {}; },
   onStop() { this.silence(); SGUI.show(); },
 
   // ---- memoire des valeurs reglees a l'oreille
@@ -3052,7 +3056,7 @@ const BENCH_LINES = [
   { n: 14, t: 'cv', v: 0, mod: true },
   { n: 15, t: 'cv', v: 102 },
   { n: 16, t: 'cv', v: 0 },
-  { n: 17, t: 'gate', nappe: true },
+  { n: 17, t: 'gate' },
   { n: 18, t: 'cv', v: 0 },
   { n: 19, t: 'cv', v: 0, regen: true },
   { n: 20, t: 'cv', v: 102, vol: true },
@@ -3122,10 +3126,6 @@ const UI = {
     $('tcCh').oninput = e => { CFG.bench.ccCh = Math.min(16, Math.max(1, +e.target.value || 1)); SUI.modInfo(); };
     $('allOff').onclick = () => this.benchAllOff();
     $('pushCV').onclick = () => this.benchPushCV();
-    $('napBuild').oninput = e => CFG.nappe.buildMeas = Math.max(0, +e.target.value || 0);
-    $('napRegen').oninput = e => CFG.nappe.regenCap = Math.min(127, Math.max(0, +e.target.value || 0));
-    $('napDown').oninput = e => CFG.nappe.downMeas = Math.max(0.25, +e.target.value || 4);
-    $('napUp').oninput = e => CFG.nappe.upMeas = Math.max(0.25, +e.target.value || 1);
 
     this.buildBench();
     this.relabel();
@@ -3171,7 +3171,7 @@ const UI = {
         b.onclick = () => {
           const on = !b.classList.contains('on');
           b.classList.toggle('on', on);
-          if (L.nappe) { Forme.touched(L); Forme.ramp = null; this.nappeFade(on); return; }   // geste manuel : la forme lache
+          if (Forme.owns(L.n)) Forme.touched(L);                           // FSU a la main : la forme passe en manuel
           if (on) { Midi.holdOn(CFG.bench.gateCh, L.n); this.bench.held.add(L.n); }
           else    { Midi.holdOff(CFG.bench.gateCh, L.n); this.bench.held.delete(L.n); }
           this.benchInfo();
@@ -3211,7 +3211,6 @@ const UI = {
   // relache les gates et ramene les CV a leurs valeurs par defaut (pas a zero :
   // un CV a 0 ferme le canal 3 du Praga et coupe les envois)
   benchAllOff() {
-    this.nappeStop();
     Forme.ramp = null; Forme.cur = null; Forme.setAuto(false);    // retour aux valeurs du banc, hors etats
     this.bench.held.forEach(n => Midi.holdOff(CFG.bench.gateCh, n));
     this.bench.held.clear();
@@ -3231,70 +3230,6 @@ const UI = {
       if (L.t !== 'cv' || !L.el || (L.mod && Mod.isAuto(L.n))) return;   // le SILSO envoie les siennes
       if (L.mod) Mod.manual(L.n, +L.el.value); else Midi.cc(this.ccOf(L), CFG.bench.ccCh, +L.el.value);
     });
-  },
-
-  // ---- transition rythme -> nappe a la main (gate 17) : montee du Regen, puis FSU et descente des vol
-  measMs() { return CFG.stepsPerMeasure * TICKS_PER_STEP * Clock.tickDur(); },
-  nappeFade(on) {
-    this.nappeStop();
-    const N = CFG.nappe, mm = this.measMs();
-    const vols = this.bench.lines.filter(L => L.vol && L.el);
-    const regen = this.bench.lines.filter(L => L.regen && L.el);
-    const fsuL = this.bench.lines.find(L => L.nappe);
-    const seq = { on, phases: [], i: 0, items: [], id: 0, name: '' };
-    if (on) {
-      if (N.buildMeas > 0 && regen.length)
-        seq.phases.push({ name: 'b_ph_build', dur: N.buildMeas * mm, targets: regen.map(L => [L, N.regenCap]) });
-      seq.phases.push({ name: 'b_ph_down', dur: N.downMeas * mm, targets: vols.map(L => [L, 0]), start: () => this.fsu(fsuL, true) });
-    } else {
-      this.fsu(fsuL, false);
-      seq.phases.push({ name: 'b_ph_up', dur: N.upMeas * mm, targets: vols.map(L => [L, L.v]).concat(regen.map(L => [L, L.v])) });
-    }
-    this.bench.fade = seq;
-    this.nappeRun();
-  },
-  nappeRun() {
-    const seq = this.bench.fade; if (!seq) return;
-    const P = seq.phases[seq.i];
-    if (!P) { this.nappeStop(true); return; }
-    if (P.start) P.start();
-    seq.name = P.name;
-    seq.items = P.targets.map(([L, to]) => ({ L, from: +L.el.value, to, last: +L.el.value }));
-    const t0 = performance.now(), dur = Math.max(1, P.dur);
-    const step = () => {
-      if (this.bench.fade !== seq) return;
-      const k = Math.min(1, (performance.now() - t0) / dur);
-      seq.items.forEach(it => {
-        const val = Math.round(it.from + (it.to - it.from) * k);
-        if (val !== it.last) {
-          it.last = val; it.L.el.value = val; it.L.val.textContent = String(val);
-          Midi.cc(this.ccOf(it.L), CFG.bench.ccCh, val);
-        }
-      });
-      this.nappeInfo(k);
-      if (k >= 1) { clearInterval(seq.id); seq.i++; this.nappeRun(); }
-    };
-    seq.id = setInterval(step, 20);
-    step();
-  },
-  fsu(L, on) {
-    if (!L) return;
-    if (on) { Midi.holdOn(CFG.bench.gateCh, L.n); this.bench.held.add(L.n); }
-    else if (this.bench.held.has(L.n)) { Midi.holdOff(CFG.bench.gateCh, L.n); this.bench.held.delete(L.n); }
-    this.benchInfo();
-  },
-  nappeStop(done) {
-    const f = this.bench && this.bench.fade;
-    if (!f) return;
-    clearInterval(f.id);
-    this.bench.fade = null;
-    this.nappeInfo(done ? 1 : null, f.on);
-  },
-  nappeInfo(k, wasOn) {
-    const el = $('nappeInfo'), f = this.bench.fade;
-    if (f) el.innerHTML = t(f.name) + ' ' + Math.round(k * 100) + '&nbsp;%';
-    else if (k === 1) el.innerHTML = wasOn ? t('b_nappe_on') : t('b_nappe_off');
-    else el.innerHTML = '';
   },
 
   // ---- affectations des sorties
@@ -3836,7 +3771,7 @@ UI.init();
 Midi.init().then(() => {
   UI.benchPushCV();                          // CV du banc, pour que le systeme ne demarre pas muet
   if (Silso.ready) Mod.push(SUI.cur, true);  // les trois timbres SILSO
-  Forme.push();                              // FSU haut si l'etat courant est 5
+  Forme.push();                              // FSU haut si la forme le tient
 });
 // le bloc de donnees SILSO est place apres ce script : on attend la fin de l'analyse
 document.addEventListener('DOMContentLoaded', () => App.init());
