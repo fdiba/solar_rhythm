@@ -5,7 +5,7 @@ daily sunspot record, from 1818 to today: the drone, the percussion, the timbres
 and the form of the piece all come from the data.
 
 This repository contains the browser instrument that drives the rack:
-**`solar_rhythm_v001.html`** (version `SOLAR-v044`), available in **English and
+**`solar_rhythm_v001.html`** (version `SOLAR-v047`), available in **English and
 French** (FR / EN button, or `?lang=en` / `?lang=fr` in the address).
 Repository: [github.com/fdiba/solar_rhythm](https://github.com/fdiba/solar_rhythm).
 
@@ -24,7 +24,7 @@ Repository: [github.com/fdiba/solar_rhythm](https://github.com/fdiba/solar_rhyth
   | Voice | Module | Days that pass the test |
   |---|---|---|
   | kick | WMD Crater | local peaks of activity, above the 27-day mean |
-  | snare | WMD Kraken | rises from one day to the next |
+  | snare | WMD Kraken, played by the Strega from phase 2 | rises from one day to the next |
   | Strega hits | Make Noise Strega | bursts above the 27-day mean |
   | Fracture | WMD Fracture (its own reverb, kept out of the main reverb) | days ending a run of 7 or more spotless days, in state 1 only |
 
@@ -76,7 +76,8 @@ Expander outputs 9 to 24 drive the mix and effects (XAOC Hrad and Praga, Desmodu
 Versio), the Fracture level before the Ruina (output 10, Quad VCA `CV 1`) and the
 Fracture `DENSITY` (output 22, set on every Fracture hit: very small
 when the previous hit is 2 bars away, large after 16 bars of silence): gates on channel 3 and `direct control`
-CVs on channel 4, note or CC = output number (output 21: CC 25). Output 25 drives the Ruina `Blend` CV input (CC 9, 0-5 V, dry in
+CVs on channel 4, note or CC = output number (output 21: CC 25). Output 32 drives the Strega `Absorb CV In` (CC 12, 0-10 V). Outputs 30 and 31 drive the Make Noise QPAS that filters the
+copy of the Kraken sent to the Strega (`FREQ1 CV`, CC 30; `Level CV`, CC 31). Output 25 drives the Ruina `Blend` CV input (CC 9, 0-5 V, dry in
 phase 1, wetter as the Sun rises). Outputs 26 to 29 of the third FHX-8CV drive the
 Strega `Activation`, `Decay`, `Filter` and `Tones` CV inputs (0-5 V, CC 26 to 29,
 14-bit). The full list is in the page, in the *Patching* and *Test bench*
@@ -112,7 +113,7 @@ Use the **Cite this repository** button (top right of the GitHub page): it reads
 [`CITATION.cff`](CITATION.cff) and gives the reference in APA and BibTeX.
 
 > Di Bartolo, F. (2026). *Solar Rhythm: the browser instrument of The 25th Cycle*
-> (version SOLAR-v044) [Computer software]. https://github.com/fdiba/solar_rhythm
+> (version SOLAR-v047) [Computer software]. https://github.com/fdiba/solar_rhythm
 
 When using the sunspot data, cite SILSO as well (see *Data* above).
 
