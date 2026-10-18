@@ -216,7 +216,7 @@ section.rh{grid-column:1/-1}
   <h1>The 25th Cycle</h1>
   <span class="sub" data-i18n="sub"></span>
   <span class="langs"><button class="seg" data-lang="fr">FR</button><button class="seg" data-lang="en">EN</button></span>
-  <span class="ver">SOLAR-v049</span>
+  <span class="ver">SOLAR-v068</span>
 </header>
 
 <main>
@@ -534,7 +534,7 @@ section.rh{grid-column:1/-1}
 
 <script>
 /* =========================================================================
-   THE 25th CYCLE · SOLAR-v049 · solar_rhythm_v001.html
+   THE 25th CYCLE · SOLAR-v068 · solar_rhythm_v001.html
    Le rythme est fabrique a partir des donnees SILSO : une mesure = une fenetre
    de jours consecutifs, chaque voix frappe sur les jours qui passent son test.
 
@@ -571,7 +571,7 @@ section.rh{grid-column:1/-1}
 
 /* ---------------------------------------------------------------- config */
 const CFG = {
-  version: 'SOLAR-v049',
+  version: 'SOLAR-v068',
   bpm: 120,
   stepsPerMeasure: 16,      // une mesure = 16 pas = 16 jours de la fenetre
   sendClock: true,          // MIDI clock F8 / FA / FC : les horloges du FH-2 en dependent
@@ -610,13 +610,16 @@ const CFG = {
                                 ghost: { from: 3, pos: [15, 7], max: 1 } } } },
       // Strega : ses frappes gonflent l'activation (sortie 26), pas de trigger
       { id: 'strega', out: 26, name: 'Strega', input: 'Activation', test: 'burst', th: 0.30, anchor: false, gate: 0, on: true,
-        loop: { len: 18, tiers: [[0, 9], [5, 14], [3, 7, 11, 16, 1]], min: 1, pRef: 0.15, t3: 3 } },
+        loop: { len: 18, tiers: [[0, 9], [5, 14], [3, 7, 11, 16, 1]], min: 1, pRef: 0.15, t3: 3,
+                // etat 2 (SOLAR-v055) : boucle de 64 pas (4 mesures), une activation au plus (plafond s_hits)
+                byState: { 2: { len: 64, tiers: [[0], [32], [16, 48]] },
+                           3: { min: 0 } } } },   // etat 3 (SOLAR-v060) : pas de frappe obligatoire, seulement si des jours passent le test
       // Gonflements calmes de la Strega (SOLAR-v049, a la place du Fracture) : a l'etat 1 seulement, sur
       // les jours qui terminent au moins 7 jours d'affilee sans tache ; une frappe au plus par boucle de
       // 32 pas (en moyenne une toutes les 9 s, rien dans 57 % des phrases de l'etat 1). Chaque frappe
       // est un gonflement lent de l'activation (via: 'strega'), plus haut et plus long au bout d'une
       // longue serie sans tache. Pour rendre la voix au Fracture : via: null (trigger FH-2 · 5).
-      { id: 'fracture', out: 5, name: 'Strega calme', input: 'Activation', test: 'calm', th: 0, run: 7, anchor: false, gate: 20, on: true, via: 'strega',
+      { id: 'fracture', out: 5, name: 'Strega calme', input: 'Activation', test: 'calm', th: 0, run: 14, anchor: false, gate: 20, on: true, via: 'strega',
         loop: { len: 32, tiers: [[0], [16], [24, 8, 12, 28]], min: 0, pRef: 0.25, t3: 1 } }
     ]
   },
@@ -696,15 +699,7 @@ const CFG = {
     // SHELL du Kraken (sortie FH-2 · 3, Mapping 15 : CC 3 canal 4) : envoye a chaque frappe de
     // caisse claire, juste avant le trigger. Centre = valeur de la phase (bloc Strega) ; ecart par
     // frappe = jitter x ecart du jour au 27 j (fraction du max du lisse 13 mois, x 4, borne a +/-1)
-    { n: 3,  cc: 3,  name: 'Kraken SHELL',    src: 's27', lo: 20, hi: 90,  inv: false, on: true, perHit: 'snare', jitter: 0.08 },
-    // DENSITY du Fracture (sortie 8CV n°2 · 6 (22), Mapping 8 : CC 22 canal 4, 0-5 V ; potard DENSITY a fond a
-    // gauche, la CV s'y ajoute, balayage complet en 5 V). Envoye a chaque frappe du Fracture, juste avant le
-    // trigger. Le plus souvent tres petit ; d'autant plus grand que la frappe precedente est loin :
-    //   g = pas depuis la frappe precedente (premiere frappe apres START : g = max)
-    //   x = ((g borne a [min, max] - min) / (max - min)) ^ curve, plus wobble x serie sans tache du jour (0-1)
-    //   min 32 pas (2 mesures, frappes consecutives) -> tres petit ; max 256 pas (16 mesures, 32 s de silence) -> grand
-    { n: 22, cc: 22, name: 'Fracture DENSITY', src: 'raw', lo: 2, hi: 100, inv: false, on: true, perHit: 'fracture',
-      gap: { min: 32, max: 256, curve: 2, wobble: 0.04 } }
+    { n: 3,  cc: 3,  name: 'Kraken SHELL',    src: 's27', lo: 20, hi: 90,  inv: false, on: true, perHit: 'snare', jitter: 0.08 }
   ],
   interp: true,             // rampe des sorties de timbre entre deux fenetres
 
@@ -724,10 +719,9 @@ const CFG = {
     filter: { n: 28, cc: 28, eps: 24 },
     tones:  { n: 29, cc: 29, eps: 24 },
     // Quad VCA (Intellijel, second boitier) devant la Ruina : niveaux en CC 14 bits, 0-5 V (+5 V = gain 1)
-    //   canal 1 Fracture OUT L (CV 1 <- sortie 10), canal 2 Strega (CV 2 <- FH-2 · 4),
+    //   canal 1 libre (Fracture retire, SOLAR-v062), canal 2 Strega (CV 2 <- FH-2 · 4),
     //   canal 3 Sub de la Strega (CV 3 vide : suit la CV 2), OUT 1 a 3 non branchees -> OUT 4 -> Ruina In L
     vcaS:   { n: 4,  cc: 4,  eps: 24 },
-    vcaF:   { n: 10, cc: 10, eps: 24 },
     // Ruina (Noise Engineering) : Blend CV (0-5 V, s'ajoute au potard, mis a fond a gauche).
     // Sortie 8CV n°3 · 1 (25) sur le CC 9 : le CC 25 est pris par le TONE du Desmodus (sortie 21)
     rBlend: { n: 25, cc: 9, eps: 24 },
@@ -738,6 +732,13 @@ const CFG = {
     // (VCA avant le filtre, reponse exponentielle ; avec un cable, le potard Level dose la CV)
     qFreq:  { n: 30, cc: 30, eps: 24 },
     qLevel: { n: 31, cc: 31, eps: 24 },
+    // agitation et Time (SOLAR-v067) : sortie 22 (8CV n°2 · 6) -> Strega Time CV In ; sortie 10 (8CV n°1 · 2)
+    // -> Speed CV In ; gate FH-2 · 5 -> Begin and End In ; Agitation Function Out -> Time Modulation Input
+    timeCV:  { n: 22, cc: 22, eps: 24 },
+    speedCV: { n: 10, cc: 10, eps: 24 },
+    agitGate: 5,
+    timeBars: 4,            // mesures : lissage de l'arche de Time
+    speedBars: 1,           // mesures : lissage de la vitesse de l'agitation
     follow: 0.4,            // part de la moyenne 27 j dans la matiere de fond
     // ecart du filtre selon la moyenne 27 j, ouverture du filtre par frappe, couleur (Tones) par frappe :
     // lignes s_fspan, s_fswell, s_tjit du tableau (une valeur par etat)
@@ -745,19 +746,36 @@ const CFG = {
     kickMs: [120, 40],
     calmMs: [1500, 3000],   // retombee d'un gonflement calme : serie courte -> 1,5 s, 30 jours sans tache -> 3 s      // retombee d'une frappe du Kraken jouee par la Strega : montee faible -> 120 ms, forte -> 40 ms
     smooth: 2,              // mesures : lissage entre deux etats
+    tonJit: { lo: 4, hi: 48, gap: 6 },   // gonflements calmes : Tones borne et ecart minimal (sortie 29 en 0-10 V, SOLAR-v063)
+    adevBars: 0.25,         // mesures : lissage du fond qui suit le jour de chaque pas (ligne s_adev, SOLAR-v057)
     storageKey: 'the25thcycle.strega.solo',   // reglages memorises dans le navigateur
     // etats 1 a 5 ; valeurs en echelle CC 0-127, sauf les plafonds de frappes
     lignes: [
       // Strega
-      { key: 's_act',    v: [  0,  34,  44,  54,  60] },   // matiere de fond (Activation), a partir de la phase 2
-      { key: 's_swell',  v: [  0,  80,  72,  64,  56] },   // hauteur d'une frappe de la Strega
+      { key: 's_act',    v: [  0,   8,  16,  54,  60] },   // phase 2 : 8, la Strega retombe presque au silence entre ses activations (SOLAR-v059)   // matiere de fond (Activation), a partir de la phase 2
+      { key: 's_adev',   v: [  0,   6,  10,   0,   0] },   // fond : + s_adev x ecart du jour (celui du pas) a sa moyenne 27 j, borne +-1 ; phase 2 : 20 (SOLAR-v057)
+      { key: 's_swell',  v: [  0,  80,  72,  64,  56] },
+      { key: 's_dhit',   v: [  0,   1,   1,   0,   0] },   // Strega au rythme du Crater (1 = oui) : chaque note du drone devient une activation, le Crater est coupe (SOLAR-v059)   // hauteur d'une frappe de la Strega
       { key: 's_decay',  v: [ 96,  92,  80,  66,  52] },   // Decay : repetitions longues au minimum
       { key: 's_filter', v: [ 40,  52,  66,  82,  96] },   // Filter : s'ouvre avec le soleil
-      { key: 's_tones',  out: 29, v: [16, 40, 64, 88, 112] },   // Tones : une couleur par phase
+      { key: 's_tones',  out: 29, v: [ 8, 20, 32, 44, 56] },   // Tones : une couleur par phase ; sortie 29 en 0-10 V depuis SOLAR-v063 (valeurs divisees par 2, memes tensions)
       { key: 's_fspan',  v: [ 24,  40,  40,  40,  40] },   // Filter : ecart total selon la moyenne 27 j (± la moitie)
       { key: 's_fswell', v: [  0,  24,  24,  24,  24] },   // Filter : ouverture a chaque frappe, retombee comme l'activation
-      { key: 's_tjit',   v: [  0,  16,  16,  16,  16] },   // Tones : ecart par frappe selon l'ecart du jour a sa moyenne 27 j
-      { key: 's_kpulse', v: [  0,  90,  90,  90,  90] },   // frappes du Kraken jouees par la Strega : hauteur d'une impulsion (0 = non)
+      { key: 's_tjit',   v: [  0,   0,   0,   8,   8] },   // Tones : ecart par frappe selon l'ecart du jour a sa moyenne 27 j
+      { key: 's_att',    v: [  0,  20,   5,   0,   0] },   // montee d'une frappe, x 100 ms (0 = attaque instantanee) ; phase 2 : 2 s (SOLAR-v055)
+      { key: 's_rlong',  v: [  0,  60,  20,   0,   0] },   // retombee d'une frappe un jour faible, x 100 ms (0 = swellMs) ; phase 2 : 6 s
+      { key: 's_rshort', v: [  0,  40,  10,   0,   0] },   // retombee d'une frappe un jour fort, x 100 ms ; phase 2 : 4 s
+      { key: 's_tglide', v: [  0,   8,   4,   0,   0] },   // mesures pour toute la course (du plancher a 127) ; vitesse constante, un aller plus court dure moins (SOLAR-v065)   // Tones : glissement lineaire vers la couleur suivante, en mesures (0 = pendant la montee) ; phase 2 : 4 (SOLAR-v056)
+      { key: 's_tswing', v: [  0,   1,   1,   0,   0] },   // Tones : allers-retours (1 = oui) : chaque frappe vise l'autre bout de la course (SOLAR-v058)
+      { key: 's_tmin',   v: [  0,  25,  25,   0,   0] },   // allers-retours (SOLAR-v065) : longueur minimale d'un aller, en % de la place disponible dans ce sens
+      { key: 's_tfloor', out: 29, v: [  0,   0,  32,   0,   0] },   // allers-retours : plancher du bas (SOLAR-v060)
+      { key: 's_kpulse', v: [  0,   0,   0,  90,  90] },
+      // agitation et Time (SOLAR-v067)
+      { key: 't_time',   out: 22, v: [ 64,  64,  64,  64,  64] },   // Time CV : centre (2,5 V), recaler le potard Time une fois
+      { key: 't_tarch',  out: 22, v: [  0,   0,   0,   0,  64] },   // Time CV : arche sur la phase (+- la moitie selon la position du lisse 13 mois dans la phase)
+      { key: 'g_agit',   out: 5,  v: [  0,   0,   0,   0,   1] },   // agitation en marche (gate FH-2 · 5 -> Begin and End In)
+      { key: 'a_speed',  out: 10, v: [  0,   0,   0,   0,  20] },   // vitesse de l'agitation : base
+      { key: 'a_sday',   out: 10, v: [  0,   0,   0,   0,  60] },   // vitesse : + a_sday x force du jour (taches / max du lisse 13 mois)   // phase 3 : non (SOLAR-v060)   // frappes du Kraken jouees par la Strega : hauteur d'une impulsion (0 = non) ; phase 2 : non (SOLAR-v054, le Kraken joue lui-meme)
       { key: 'a_base',   out: 32, v: [32, 28, 24, 20, 16] },  // Absorb : ecart plus sourd au minimum, plus clair au maximum
       { key: 'a_span',   v: [  0,  24,  24,  24,  24] },   // Absorb : ecart total selon la moyenne 27 j (rotation active -> plus bas)
       { key: 'a_hit',    v: [  0,  20,  20,  20,  20] },   // Absorb : baisse a chaque frappe, remonte comme l'activation
@@ -766,10 +784,12 @@ const CFG = {
       { key: 'p_fspan',  v: [  0,  20,  20,  20,  20] },   // coupure : ecart total selon la moyenne 27 j
       { key: 'p_level',  out: 31, v: [127, 100, 100, 100, 100] }, // quantite de Kraken envoyee : pleine en phase 1, reduite ensuite
       // percussion : plafonds de frappes par boucle
-      { key: 's_hits',   voice: 'strega', max: true, v: [0, 2, 4, 5, 7] },  // frappes de la Strega, des la phase 2
+      { key: 's_hits',   voice: 'strega', max: true, v: [0, 0, 2, 5, 7] },   // phase 2 : 0, la Strega joue au rythme du Crater (SOLAR-v059)  // frappes de la Strega, des la phase 2
       { key: 's_kick',   voice: 'kick',  max: true, v: [0, 0, 0, 3, 3] },   // Crater sec (le drone joue partout)
       { key: 's_snare',  voice: 'snare', max: true, v: [1, 1, 2, 2, 3] },   // Kraken
-      { key: 's_frac',   voice: 'fracture', max: true, v: [1, 0, 0, 0, 0] }, // gonflements calmes : 7 jours sans tache ou plus, phase 1, boucle de 32 pas
+      { key: 's_frac',   voice: 'fracture', max: true, v: [1, 0, 0, 0, 0] }, // gonflements calmes : 14 jours sans tache ou plus (SOLAR-v053), phase 1, boucle de 32 pas
+      { key: 's_ctones', out: 29, v: [ 32,   0,   0,   0,   0] },   // Tones d'un gonflement calme (SOLAR-v051) : + s_ctones x (1 - part sans tache 27 j) / 0,6, borne a 1, tenu jusqu'au suivant
+      { key: 's_cjit',   out: 29, v: [ 12,   0,   0,   0,   0] },   // Tones d'un gonflement calme (SOLAR-v052) : ecart tire (reproductible) de +- s_cjit, 12 au moins avec le precedent, Tones borne a 8-96
       { key: 's_cpulse', v: [ 70,   0,   0,   0,   0] },   // hauteur d'un gonflement calme (retombee de 1,5 a 3 s selon la serie sans tache)
       // timbres par phase (centre, l'ecart par frappe s'y ajoute)
       { key: 't_shell',   mod: 3,  v: [20, 35, 50, 60, 75] },    // Kraken SHELL : sourd -> clair
@@ -777,7 +797,6 @@ const CFG = {
       // Quad VCA : niveaux avant la Ruina (127 = 5 V = gain 1). Fracture a 102 au plus (gain 0,8) :
       // il sort 20 Vpp et la Ruina ecrete vers 16 Vpp
       { key: 'q_strega',  out: 4,  v: [127, 127, 127, 127, 127] },  // Strega et son Sub (l'echo du Kraken passe en phase 1)
-      { key: 'q_frac',    out: 10, v: [  0,   0,   0,   0,   0] },  // Fracture : ne joue plus (SOLAR-v049) ; 102 au plus s'il revient
       // Ruina Blend : 0 = sec (l'echo du Kraken reste propre en phase 1), monte avec le Soleil
       // jusqu'a 64 (12 h, depart conseille par le manuel pour les percussions : l'attaque reste nette)
       { key: 'r_blend',   out: 25, v: [  0,  16,  32,  48,  64] }
@@ -799,14 +818,18 @@ const CFG = {
     // Etat 1 : Regen 75 (environ 13 h avec le potard a fond a gauche : queue infinie, sous le
     // ducking) ; Size respire autour de sa valeur (CFG.forme.breath)
     lignes: [
-      { n: 19, key: 'f_regen',  v: [ 75,  70,  65,  60,  55] },
+      { n: 19, key: 'f_regen',  v: [ 62,  70,  65,  60,  55] },   // etat 1 : 62 (SOLAR-v066, 55 en v061) ; les notes au bout de jours sans tache fleurissent (lignes bloom)
+      { id: 'kgap',  key: 'f_kgap',  num: true, v: [40, 0, 0, 0, 0] },   // espacement minimal des notes du Crater, en pas (SOLAR-v061)
+      { id: 'bloom', key: 'f_bloom', num: true, v: [ 4, 0, 0, 0, 0] },   // 4 depuis SOLAR-v066 (7 en v061)   // floraison : note sur un jour sans tache au bout d'au moins v jours sans tache (0 = jamais)
+      { id: 'bmin',  key: 'f_bmin',  num: true, v: [85, 0, 0, 0, 0] },   // floraison : Regen au seuil...
+      { id: 'bmax',  key: 'f_bmax',  num: true, v: [96, 0, 0, 0, 0] },   // ...et au bout de 30 jours (96 : juste sous 15 h, sans ducking)   // Regen suit le calme (SOLAR-v053) : + v x (u - 0,5), u = (part sans tache 27 j - 0,4) / 0,6 borne a [0, 1]
       { n: 18, key: 'f_size',   v: [ 50,  48,  45,  40,  35] },
       { n: 13, key: 'f_send13', v: [102,  70,  60,  50,  40] },   // envoi de la Strega
-      { n: 15, key: 'f_send15', v: [102,   0,   0,   0,   0] },   // envoi du Kraken : 0 des la phase 2 (la Strega joue ses frappes)
-      { n: 16, key: 'f_send16', v: [102, 102,  95,  90,  85] },   // envoi du Crater : le drone
+      { n: 15, key: 'f_send15', v: [102,  50,  40,   0,   0] },   // envoi du Kraken : 50 en phase 2 (SOLAR-v054), 0 ensuite (la Strega joue ses frappes)
+      { n: 16, key: 'f_send16', v: [127,   0,  95,  90,  85] },   // phase 1 : 127 (SOLAR-v066)   // phase 2 : 0, la Strega remplace le Crater (SOLAR-v059)   // envoi du Crater : le drone
       { n: 24, key: 'f_vol24',  v: [102, 102, 102, 102, 102] },
-      { n: 23, key: 'f_vol23',  v: [102,   0,   0,   0,   0] },    // Kraken sec : muet des la phase 2, il nourrit l'entree externe de la Strega
-      { n: 20, key: 'f_vol20',  v: [  0,  50,  65, 102, 102] },    // Crater sec : coupe a l'etat 1 (drone dans la reverbe), discret aux etats 2-3, plein ensuite
+      { n: 23, key: 'f_vol23',  v: [102,  89,  96,   0,   0] },    // Kraken sec : environ -5 dB en phase 2 (SOLAR-v054), muet ensuite (il nourrit l'entree externe de la Strega)
+      { n: 20, key: 'f_vol20',  v: [ 70,   0,   0, 102, 102] },   // phase 1 : 70 (SOLAR-v066, 76 avant)    // Crater sec (SOLAR-v050) : environ -10 dB aux etats 1-2, -5 dB a l'etat 3, plein ensuite (Praga vert, potard vol a fond a droite)
       { n: 17, key: 'f_fsu', gate: true, v: [0, 0, 0, 0, 0] },    // nappe figee : cocher l'etat 1 pour la retrouver au creux
       { id: 'throw', key: 'f_throw', flag: true, v: [0, 1, 1, 1, 1] }
     ],
@@ -816,7 +839,11 @@ const CFG = {
     throws: { val: 102, steps: 1, snare: 15, strega: 13, stregaEvery: 4 },
     // respiration lente d'une sortie de la forme : sinus d'amplitude amp[etat] autour de la
     // valeur de l'etat, periode `bars` mesures (hors rampes)
-    breath: { n: 18, amp: [12, 6, 4, 0, 0], bars: 16 }
+    breath: { n: 18, amp: [12, 6, 4, 0, 0], bars: 16 },
+    // sortie de Regen (floraisons de la phase 1)
+    calm: { n: 19 },
+    // floraison (SOLAR-v061) : Regen tenu pendant la note, puis retour lineaire en `bars` mesures ; envoi 16 a `send`
+    bloom: { send: 127, bars: 4 }
   }
 };
 
@@ -1139,13 +1166,16 @@ const TEXTS = {
     sg_live: 'activation {a} · decay {d} · filtre {f} · tones {o}', sg_param: 'Paramètre',
     sg_g_strega: 'Strega', sg_g_perc: 'Percussion : frappes par boucle au plus', sg_g_timbre: 'Timbres du Kraken par phase (centre, CC)', sg_g_mix: 'Quad VCA et Ruina (127 = 5 V ; Quad VCA : gain 1)',
     s_act: 'activation de fond', s_act_ds: 'matière continue, pondérée par la moyenne 27 jours',
+    t_time: 'Time : centre', t_time_ds: 'Time CV (sortie 22) : 64 = 2,5 V, à garder pareil partout ; le potard Time se recale une fois', t_tarch: 'Time : arche sur la phase', t_tarch_ds: 'Time monte puis redescend avec le lissé 13 mois dans la phase (± la moitié de la valeur), lissé sur 4 mesures', g_agit: 'agitation en marche', g_agit_ds: '1 : gate FH-2 · 5 haut, l’agitation de la Strega tourne (Agitation Function Out → Time Modulation Input)', a_speed: 'agitation : vitesse de base', a_speed_ds: 'Speed CV (sortie 10), potard Speed à fond à gauche', a_sday: 'agitation : vitesse selon le jour', a_sday_ds: 'plus le jour est taché, plus l’agitation est rapide (+ cette valeur × taches / maximum du cycle), lissé sur une mesure',
+    s_adev: 'fond : écart selon le jour', s_adev_ds: 'le fond de l’activation suit le jour de chaque pas : plus taché que sa moyenne 27 jours, il monte ; plus calme, il descend (± cette valeur, lissé sur un quart de mesure)',
+    s_dhit: 'Strega au rythme du Crater', s_dhit_ds: '1 : chaque note du drone devient une activation de la Strega (même moment, durée de la note) ; couper alors le Crater (lignes 16 et 20 de la forme)',
     s_swell: 'frappe', s_swell_ds: 'hauteur d’un gonflement, ajoutée au fond',
     s_decay: 'Decay', s_decay_ds: 'longueur des répétitions (Strega et Kraken répété)',
     s_filter: 'Filter', s_filter_ds: 'ouverture de base de la phase',
     s_tones: 'Tones', s_tones_ds: 'une couleur par phase',
     s_fspan: 'Filter : moyenne 27 j', s_fspan_ds: 'écart total selon la moyenne 27 jours (± la moitié)',
     s_fswell: 'Filter : frappe', s_fswell_ds: 'ouverture à chaque frappe, se referme comme l’activation',
-    s_tjit: 'Tones : frappe', s_tjit_ds: 'écart par frappe selon l’écart du jour à sa moyenne 27 jours',
+    s_att: 'frappe : montée', s_att_ds: 'durée de la montée d’une frappe, en dixièmes de seconde (20 = 2 s ; 0 = attaque instantanée)', s_rlong: 'frappe : retombée, jour faible', s_rlong_ds: 'en dixièmes de seconde (60 = 6 s ; 0 = retombée courte d’origine, 1,2 à 0,22 s)', s_rshort: 'frappe : retombée, jour fort', s_rshort_ds: 'en dixièmes de seconde (40 = 4 s), un jour au maximum du cycle', s_tglide: 'Tones : glissement', s_tglide_ds: 'en mesures : durée pour parcourir toute la course (vitesse constante)', s_tswing: 'Tones : allers-retours', s_tswing_ds: '1 : Tones monte puis descend sans arrêt, chaque aller d’une longueur différente', s_tfloor: 'allers-retours : plancher', s_tfloor_ds: 'valeur la plus basse de Tones (0 : toute la course)', s_tmin: 'allers-retours : longueur minimale', s_tmin_ds: 'chaque aller parcourt de cette part (en %) à 100 % de la place disponible dans son sens, selon le jour et un tirage ; un aller court dure moins (vitesse constante)', s_tjit: 'Tones : frappe', s_tjit_ds: 'écart par frappe selon l’écart du jour à sa moyenne 27 jours',
     s_kpulse: 'frappes du Kraken', s_kpulse_ds: 'jouées par la Strega : hauteur de l’impulsion (0 = non) ; le Kraken muet nourrit son entrée',
     a_base: 'Absorb', a_base_ds: 'part du son filtré absorbée : écho plus sourd (0-10 V ; potard Absorb à fond à droite)',
     a_span: 'Absorb : moyenne 27 j', a_span_ds: 'écart total ; une rotation active éclaircit l’écho',
@@ -1153,21 +1183,20 @@ const TEXTS = {
     p_freq: 'QPAS coupure', p_freq_ds: 'écho du Kraken dans la Strega : sombre au minimum, plus clair ensuite (FREQ1 CV)',
     p_fspan: 'QPAS : moyenne 27 j', p_fspan_ds: 'écart total de la coupure selon la moyenne 27 jours',
     p_level: 'QPAS niveau', p_level_ds: 'quantité de Kraken envoyée à la Strega (Level CV, réponse exponentielle)',
-    s_hits: 'frappes de la Strega', s_hits_ds: 'test « bouffée », boucle de 18 pas',
+    s_hits: 'frappes de la Strega', s_hits_ds: 'test « bouffée », boucle de 18 pas (64 en phase 2)',
     s_kick: 'Crater sec', s_kick_ds: 'le drone joue dans toutes les phases',
     s_snare: 'Kraken', s_snare_ds: 'boucle de 16 pas, puis 12 à l’état 5',
-    s_frac: 'Strega calme', s_frac_ds: 'gonflements lents au bout de 7 jours sans tache ou plus, phase 1, boucle de 32 pas', s_cpulse: 'Strega calme : hauteur', s_cpulse_ds: 'hauteur d’un gonflement calme, retombée de 1,5 à 3 s selon la série sans tache',
+    s_frac: 'Strega calme', s_frac_ds: 'gonflements lents au bout de 14 jours sans tache ou plus, phase 1, boucle de 32 pas', s_ctones: 'Strega calme : Tones', s_ctones_ds: 'couleur de chaque gonflement calme : plus il y a eu de jours avec taches sur 27 jours, plus Tones monte (100 % sans tache : rien ajouté)', s_cjit: 'Strega calme : Tones, écart', s_cjit_ds: 'écart tiré à chaque gonflement (± cette valeur, reproductible), au moins 6 avec le précédent ; Tones reste entre 4 et 48 (sortie 29 en 0-10 V)', s_cpulse: 'Strega calme : hauteur', s_cpulse_ds: 'hauteur d’un gonflement calme, retombée de 1,5 à 3 s selon la série sans tache',
     t_shell: 'Kraken SHELL', t_shell_ds: 'sourd → clair',
     t_snares: 'Kraken SNARES', t_snares_ds: 'peu de timbre → beaucoup',
-    q_strega: 'niveau Strega', q_strega_ds: 'canal 2 du Quad VCA ; le Sub (canal 3) suit',
-    q_frac: 'niveau Fracture', q_frac_ds: 'canal 1 du Quad VCA ; le Fracture ne joue plus (102 au plus s’il revient)',
+    q_strega: 'niveau Strega', q_strega_ds: 'canal 2 du Quad VCA (le Sub, canal 3, est débranché)',
     r_blend: 'Ruina Blend', r_blend_ds: '0 = sec, 127 = traité seul ; potard Blend à fond à gauche',
-    sg_hint: 'Audio : Strega <code>Modular Level Output</code> → Quad VCA <code>IN 2</code> (niveau : FH-2 · 4), Fracture <code>OUT L</code> → <code>IN 1</code> (niveau : sortie 10), <code>OUT 4/MIX</code> → Ruina <code>In L</code>, Ruina → Praga canaux 1 et 2 (la forme pilote leur <code>vol</code>, leur mute et leur envoi de réverbe) ; une copie de la sortie du Kraken → QPAS (passe-bas) → Strega <code>External Substance In</code> (le Kraken répété). CV du troisième FHX-8CV, 0-5 V, CC 14 bits sur le canal du banc : <b>26</b> → <code>Activation CV</code>, <b>27</b> → <code>Decay CV</code>, <b>28</b> → <code>Filter CV</code>, <b>29</b> → <code>Tones CV</code>. Hauteur : FH-2 · 7 par multiple → <code>Tonic 1V/Oct</code>, même note que le Crater. Potards : <code>Activation Constant</code>, <code>Activation Interference</code>, <code>Strength</code> et <code>Tones</code> à fond à gauche, <code>External Constant</code> vers 11 h, <code>Blend</code> vers 13 h ; atténuvertisseurs CV vers 15 h (à 12 h, la CV ne passe pas). STOP : activation, decay et filtre à 0, niveaux du Quad VCA à 0 : la Strega et le Fracture se taisent.',
+    sg_hint: 'Audio : Strega <code>Modular Level Output</code> → Quad VCA <code>IN 2</code> (niveau : FH-2 · 4), <code>OUT 4/MIX</code> → Ruina <code>In L</code>, Ruina → Praga canaux 1 et 2 (la forme pilote leur <code>vol</code>, leur mute et leur envoi de réverbe) ; une copie de la sortie du Kraken → QPAS (passe-bas) → Strega <code>External Substance In</code> (le Kraken répété). CV du troisième FHX-8CV, 0-5 V (29 en 0-10 V), CC 14 bits sur le canal du banc : <b>26</b> → <code>Activation CV</code>, <b>27</b> → <code>Decay CV</code>, <b>28</b> → <code>Filter CV</code>, <b>29</b> → <code>Tones CV</code>. Hauteur : FH-2 · 7 par multiple → <code>Tonic 1V/Oct</code>, même note que le Crater. Potards : <code>Activation Constant</code>, <code>Activation Interference</code>, <code>Strength</code> et <code>Tones</code> à fond à gauche, <code>External Constant</code> vers 11 h, <code>Blend</code> vers 13 h ; atténuvertisseurs CV vers 15 h, <code>Tones CV</code> à fond à droite (à 12 h, la CV ne passe pas). Agitation (phase 5) : <code>Agitation Function Out</code> → <code>Time Modulation Input</code>, FH-2 · 5 → <code>Begin and End In</code>, sortie 10 → <code>Speed CV In</code>, sortie 22 → <code>Time CV In</code> ; <code>Time Modulation Combo Control</code> à partir de fond à gauche. STOP : activation, decay et filtre à 0, niveau du Quad VCA à 0, agitation arrêtée : la Strega se tait.',
     sg_hint2: 'Valeurs CC 0-127, sauf les plafonds de frappes. Les valeurs de la Strega sont lissées sur 2 mesures ; les timbres du Kraken sont des centres, chaque frappe s’en écarte un peu selon le jour. Réglages mémorisés dans ce navigateur.',
     rh_th: 'seuil', rh_anchor: 'ancrage 1er temps', rh_dens: '≈ {x} frappes / {n} pas sur le cycle {c}',
-    v_kick: 'kick : pics d’activité', v_snare: 'caisse claire : montées', v_strega: 'Strega : bouffées au-dessus de la moyenne 27 jours (frappes de la Strega)', v_fracture: 'Strega calme : gonflements lents de l’activation au bout de 7 jours sans tache (phase 1)', 
+    v_kick: 'kick : pics d’activité', v_snare: 'caisse claire : montées', v_strega: 'Strega : bouffées au-dessus de la moyenne 27 jours (frappes de la Strega)', v_fracture: 'Strega calme : gonflements lents de l’activation au bout de 14 jours sans tache (phase 1)', 
     test_peak: 'pic local au-dessus des 27 j', test_rise: 'montée d’un jour au suivant', test_level: 'nombre de taches', test_burst: 'au-dessus de la moyenne 27 j', test_calm: 'jour calme (sans tache au seuil 0)',
-    rh_hint: '<b>Rythme solaire.</b> Un <b>drone dans toutes les phases</b> : le Crater excite la réverbe en notes tenues à intervalles irréguliers (cases violettes), et la matière de la Strega s’y ajoute à partir de la phase 2. Sur ce fond, une percussion qui change par phase, en nombre et en timbre : 1, le Kraken seul, répété par la Strega, et des <b>gonflements lents de la Strega</b> au bout d’une semaine sans tache ; 2, les premières <b>frappes de la Strega</b> (gonflements tonals), rares ; 3, plus de frappes de la Strega, avec le Kraken ; 4, le <b>Crater sec</b> revient en coups mats ; 5, toutes les voix, timbres brillants et courts. Dès la phase 2, <b>les frappes du Kraken sont jouées par la Strega</b> (impulsions courtes d’activation) ; le Kraken, muet, nourrit son entrée externe. Toutes les {p} mesures (une phrase), la page lit les {d} jours que la phrase va parcourir : la part des jours qui passent le test d’une voix donne son <b>nombre de frappes</b>, plafonné selon l’état (bloc Strega) ; à niveau égal, les jours les plus forts gagnent. Chaque voix boucle sur sa propre longueur (Crater 16 pas, Kraken 16 puis 12, Strega 18, Strega calme 32). D’une phrase à l’autre, {m} frappes au plus changent par voix ; chaque voix <b>mute</b> (cases jaunes) aux mesures 4 et 8. Fill de caisse claire (cases bleues) avant un changement d’état. Le chiffre après le nom donne frappes / longueur de boucle.',
+    rh_hint: '<b>Rythme solaire.</b> Un <b>drone dans toutes les phases</b> : le Crater excite la réverbe en notes tenues à intervalles irréguliers (cases violettes), et la matière de la Strega s’y ajoute à partir de la phase 2. Sur ce fond, une percussion qui change par phase, en nombre et en timbre : 1, le Kraken seul, répété par la Strega, et des <b>gonflements lents de la Strega</b> au bout de deux semaines sans tache ; 2, la <b>Strega remplace le Crater</b> : chaque note du drone devient une activation, <code>Tones</code> en grands allers-retours, le Kraken sec ; 3, même principe, avec quelques frappes propres de la Strega, le Crater dans la réverbe seulement et le Kraken sec ; 4, le <b>Crater sec</b> revient en coups mats ; 5, toutes les voix, timbres brillants et courts, <code>Time</code> de la Strega en arche sur la phase et son agitation plus rapide les jours chargés. En phases 1 à 3, le Kraken joue lui-même ; dès la phase 4, <b>ses frappes sont jouées par la Strega</b> (impulsions courtes d’activation) et le Kraken, muet, nourrit son entrée externe. Toutes les {p} mesures (une phrase), la page lit les {d} jours que la phrase va parcourir : la part des jours qui passent le test d’une voix donne son <b>nombre de frappes</b>, plafonné selon l’état (bloc Strega) ; à niveau égal, les jours les plus forts gagnent. Chaque voix boucle sur sa propre longueur (Crater 16 pas, Kraken 16 puis 12, Strega 18, Strega calme 32). D’une phrase à l’autre, {m} frappes au plus changent par voix ; chaque voix <b>mute</b> (cases jaunes) aux mesures 4 et 8. Fill de caisse claire (cases bleues) avant un changement d’état. Le chiffre après le nom donne frappes / longueur de boucle.',
 
     // vue du cycle
     cv_title: 'SILSO · cycle courant',
@@ -1183,7 +1212,7 @@ const TEXTS = {
     f_hint: 'L’état vient du <b>lissé 13 mois</b> normalisé dans le cycle, découpé en 5 tranches égales (seuils 0,2 · 0,4 · 0,6 · 0,8, sans marge). Il ne change qu’aux mesures multiples de la grille, comptées depuis <code>START</code>, puis glisse en rampe vers les valeurs de l’état (8 mesures entre les états 1 et 2, 4 sinon). <b>La réverbe porte le drone dans toutes les phases</b> : longue à l’état 1 (<code>Regen</code> 75), un peu plus courte quand le soleil monte (55 à l’état 5). Le Crater la nourrit partout (envoi 102 à 85) ; son <code>vol</code> sec est à 0 à l’état 1, discret aux états 2 et 3 (50, 65), plein ensuite : chaque excitation est une <b>note tenue</b> à intervalle irrégulier tiré des jours, plus longue (jusqu’à 4 s) après une longue série de jours sans tache, plus courte (de 600 à 250 ms) les jours avec taches ; le Crater tient au niveau de son potard <code>SUSTAIN</code> tant que le gate est haut. La Strega et le Kraken y sont peu envoyés, pour que les frappes restent lisibles, sauf par les <b>dub throws</b> (états 2 à 5) : l’envoi s’ouvre un pas sur la dernière caisse claire de chaque phrase, sur tout le fill, et sur les frappes de la Strega des mesures 4 et 8. <code>Size</code> respire aux états 1 à 3 (±12, ±6, ±4). La <b>nappe figée</b> (case <code>FSU</code> de l’état 1, décochée par défaut) n’existe qu’au <b>creux du minimum</b> (repère bleu) : le <code>FSU</code> part à la fin de la transition qui y mène, quand la cuve est pleine, et relâche au début de la suivante. Boutons 1-5, gate 8CV n°2 · 1 (17), curseur d’une de ces sorties ou <b>Valeurs par défaut</b> : la forme passe en manuel (le <code>FSU</code> suit alors la case du tableau). <b>STOP coupe la réverbe</b> (bouton) : <code>Regen</code> et envois à 0, <code>FSU</code> relâché, la queue s’éteint ; START rend les valeurs de l’état.',
     f_hint2: 'Valeurs CC 0-127 (102 = 8 V = 0 dB sur les <code>vol</code> du Praga et envoi ouvert sur le Hrad). Réglages mémorisés dans ce navigateur.',
     f_regen: 'Desmodus Regen', f_size: 'Desmodus Size', f_send13: 'envoi Strega', f_send15: 'envoi Kraken', f_send16: 'envoi Crater',
-    f_vol24: 'vol Strega', f_vol23: 'vol Kraken', f_vol20: 'vol Crater', f_fsu: 'Desmodus FSU',
+    f_vol24: 'vol Strega', f_vol23: 'vol Kraken', f_vol20: 'vol Crater', f_kgap: 'espacement des notes du Crater', f_kgap_ds: 'intervalle minimal entre deux notes du drone, en pas (40 = 2,5 mesures)', f_bloom: 'floraison : seuil', f_bloom_ds: 'une note tombée sur un jour sans tache au bout d’au moins ce nombre de jours sans tache reçoit beaucoup plus de réverbe (0 = jamais)', f_bmin: 'floraison : Regen au seuil', f_bmin_ds: 'Regen (19) de la note au seuil, tenu pendant la note puis retour en 4 mesures ; l’envoi du Crater s’ouvre à 127 pendant la note', f_bmax: 'floraison : Regen à 30 jours', f_bmax_ds: 'Regen au bout de 30 jours sans tache (96 : juste sous 15 h, sans ducking)', f_fsu: 'Desmodus FSU',
 
     // timbres
     mod_title: 'Timbres SILSO → 8CV', mod_src: 'source', mod_lo: 'bas', mod_hi: 'haut', mod_inv: 'inverser',
@@ -1194,7 +1223,7 @@ const TEXTS = {
     // melodie
     mel_title: 'Mélodie → Crater', mel_scale: 'Gamme', mel_root: 'Fondamentale', mel_walk: 'Marche min / max',
     mel_span: 'Amplitude pas', mel_div: 'Division', mel_note: 'Note jouée',
-    mel_hint: 'Note envoyée au convertisseur MIDI/CV canal 7 (sortie FH-2 · 7 → <code>1V/oct</code> du Crater et, par un multiple, <code>Tonic 1V/Oct</code> de la Strega). <b>Liée à l’état</b> (par défaut) : la note change toutes les 4 mesures aux états 1 et 2, puis 2, 1 et une demi-mesure à l’état 5 ; sinon, la division fixe ci-dessus. <b>Notes</b> : par défaut elles suivent l’activité (moyenne 27 jours normalisée dans le cycle, placée sur la gamme entre les bornes de marche) ; sinon, marche aléatoire bornée. Le Crater n’est entendu sec qu’aux états 4 et 5 : avant, chaque note s’accumule dans la réverbe.',
+    mel_hint: 'Note envoyée au convertisseur MIDI/CV canal 7 (sortie FH-2 · 7 → <code>1V/oct</code> du Crater et, par un multiple, <code>Tonic 1V/Oct</code> de la Strega). <b>Liée à l’état</b> (par défaut) : la note change toutes les 4 mesures aux états 1 et 2, puis 2, 1 et une demi-mesure à l’état 5 ; sinon, la division fixe ci-dessus. <b>Notes</b> : par défaut elles suivent l’activité (moyenne 27 jours normalisée dans le cycle, placée sur la gamme entre les bornes de marche) ; sinon, marche aléatoire bornée. Chaque note s’accumule dans la réverbe ; le Crater sec reste en retrait aux états 1 à 3 (environ -10 dB, puis -5 dB) et sonne plein aux états 4 et 5.',
     m_ambit: 'ambitus <b>{a} → {b}</b> · {d} degrés · {s} demi-tons ({o} oct.)', m_out: 'max hors gamme ({n} degrés)',
     m_per_meas: '{n} notes / mes.', m_by_state: 'une note toutes les {b} mes. (états 1 → 5)',
     mel_state_l: 'Rythme', mel_state: 'lié à l’état de la forme',
@@ -1211,7 +1240,6 @@ const TEXTS = {
     b_held: 'gates hauts :', b_none: 'aucun gate haut',
     b_hint: 'Un CV à <b>0</b> ferme ce qu’il pilote : un <code>vol</code> du Praga tombe au silence, un envoi du Hrad se coupe. Côté FH-2 : une ligne <b>Triggers</b> par gate (<code>Trig Type = Gate</code>, canal ci-dessus, note = numéro de sortie) et un <b>Mapping</b> <code>direct control</code> par CV (canal ci-dessus, CC = numéro de sortie, sauf 21 : CC 25). Curseurs verts : timbres SILSO ; bleus : forme.',
     b_l9: 'Hrad active 1+2 : mute Strega (canal 1) et Fracture (canal 2)',
-    b_l10: 'Quad VCA CV 1 : niveau du Fracture (bloc Strega, par phase)',
     b_l11: 'Hrad active 3 : mute Kraken',
     b_l12: 'Hrad active 4 : mute Crater',
     b_l13: 'Hrad aux cv 1+2 : envoi réverbe Strega. 102 = 8 V = ouvert, 0 = fermé. Forme, throws',
@@ -1223,7 +1251,6 @@ const TEXTS = {
     b_l19: 'Desmodus Regen : 0 = le potard seul décide. Forme',
     b_l20: 'Praga vol canal 4 : Crater. 102 = 8 V = 0 dB. Forme',
     b_l21: 'Desmodus TONE (CC 25) : 0 = passe-bas, 64 ≈ neutre, 127 = passe-haut. Timbre SILSO (écart)',
-    b_l22: 'Fracture DENSITY : à chaque frappe, très petit si la frappe précédente est à 2 mesures, grand après 16 mesures de silence (potard DENSITY à fond à gauche)',
     b_l23: 'Praga vol canal 3 : Kraken. 102 = 0 dB. Forme',
     b_l24: 'Praga vol canaux 1+2 : Strega et Fracture. 102 = 0 dB. Forme',
 
@@ -1232,8 +1259,7 @@ const TEXTS = {
     af_1: 'Crater <code>TRIG</code> : gate canal 3, note 1 · kick solaire',
     af_2: 'Kraken <code>HEAD</code> : gate canal 3, note 2 · caisse claire solaire',
     af_3: 'Kraken <code>SHELL</code> : <code>direct control</code>, CC 3 canal 4 (mapping 15) · timbre SILSO + variation à chaque frappe',
-    af_4: 'Quad VCA <code>CV 2</code> : niveau de la Strega et de son Sub (CC 4, 0-5 V)',
-    af_5: 'libre (Fracture <code>TRIG</code> : ne joue plus)',
+    af_4: 'Quad VCA <code>CV 2</code> : niveau de la Strega (CC 4, 0-5 V ; Sub débranché)',
     af_6: 'horloge Base 6 × 1 (double-croche) → 0-Ctrl B <code>Clock</code>',
     af_7: 'convertisseur MIDI/CV canal 7 → Crater <code>1V/oct</code>',
     af_8: 'LFO Base 96 × 3 → Kraken <code>VELOCITY</code>',
@@ -1241,15 +1267,15 @@ const TEXTS = {
     af_11: 'Hrad <code>active 3</code> (Kraken) / <code>active 4</code> (Crater)',
     af_13: 'Hrad <code>aux cv 1+2</code> : envoi Strega · forme, throws',
     af_15: 'Hrad <code>aux cv 3</code> : envoi Kraken (forme, throws ; copie du Kraken dans <code>aux ins 3</code>) / <code>aux cv 4</code> : envoi Crater (forme ; copie du Crater dans <code>aux ins 4</code>)',
-    af_10: 'Quad VCA <code>CV 1</code> (niveau du Fracture) / Kraken <code>SNARES</code> · timbre par phase',
+    af_14: 'Kraken <code>SNARES</code> · timbre par phase', af_5: 'Strega <code>Begin and End In</code> : agitation en marche (gate, par phase)', af_10: 'Strega <code>Speed CV In</code> : vitesse de l’agitation (selon la force du jour)', af_22: 'Strega <code>Time CV In</code> : Time, centre et arche sur la phase',
     af_17: 'Desmodus <code>FSU</code> · forme (creux du minimum)',
     af_18: 'Desmodus <code>Size</code> / <code>Regen</code> · forme',
     af_20: 'Praga <code>vol</code> canal 4 (Crater) · forme',
     af_21: 'Desmodus <code>TONE</code>, CC 25 · timbre SILSO (écart)',
-    af_22: 'Fracture <code>DENSITY</code> (par frappe) / Praga <code>vol</code> canal 3 (forme)',
+    af_23: 'Praga <code>vol</code> canal 3 : Kraken (forme)',
     af_24: 'Praga <code>vol</code> canaux 1+2 (Strega) · forme',
     af_25: 'Ruina <code>Blend</code> CV (CC 9, 0-5 V) · une valeur par phase', af_26: 'Strega <code>Activation CV</code> / <code>Decay CV</code> · matière, frappes, répétitions',
-    af_28: 'Strega <code>Filter CV</code> / <code>Tones CV</code> · par phase',
+    af_28: 'Strega <code>Filter CV</code> (0-5 V) / <code>Tones CV</code> (0-10 V) · par phase',
     af_30: 'QPAS <code>FREQ1 CV</code> (CC 30, 0-5 V) / <code>Level CV</code> (31, CC 31, 0-8 V)', af_32: 'Strega <code>Absorb CV In</code> (CC 12, 0-10 V)', af_65: 'horloge sans sortie physique → reset du LFO FH-2 · 8',
     af_hint: 'Les quatre voix sont déclenchées directement par les données : gates sur le canal 3, note = numéro de sortie du FH-2. La sortie FH-2 · 3 pilote le <code>SHELL</code> du Kraken.',
 
@@ -1320,13 +1346,16 @@ const TEXTS = {
     sg_live: 'activation {a} · decay {d} · filter {f} · tones {o}', sg_param: 'Parameter',
     sg_g_strega: 'Strega', sg_g_perc: 'Percussion: max hits per loop', sg_g_timbre: 'Kraken timbres per phase (centre, CC)', sg_g_mix: 'Quad VCA and Ruina (127 = 5 V; Quad VCA: gain 1)',
     s_act: 'background activation', s_act_ds: 'continuous matter, weighted by the 27-day mean',
+    t_time: 'Time: centre', t_time_ds: 'Time CV (output 22): 64 = 2.5 V, keep it the same everywhere; retune the Time knob once', t_tarch: 'Time: arch over the phase', t_tarch_ds: 'Time rises then falls with the 13-month smoothed value within the phase (± half the value), smoothed over 4 bars', g_agit: 'agitation running', g_agit_ds: '1: gate FH-2 · 5 high, the Strega agitation runs (Agitation Function Out → Time Modulation Input)', a_speed: 'agitation: base speed', a_speed_ds: 'Speed CV (output 10), Speed knob fully left', a_sday: 'agitation: speed from the day', a_sday_ds: 'the more spotted the day, the faster the agitation (+ this value × spots / cycle maximum), smoothed over one bar',
+    s_adev: 'background: offset from the day', s_adev_ds: 'the activation background follows the day of each step: more spotted than its 27-day mean, it rises; calmer, it falls (± this value, smoothed over a quarter bar)',
+    s_dhit: 'Strega on the Crater rhythm', s_dhit_ds: '1: each drone note becomes a Strega activation (same moment, note length); then mute the Crater (form lines 16 and 20)',
     s_swell: 'hit', s_swell_ds: 'height of a swell, added to the background',
     s_decay: 'Decay', s_decay_ds: 'length of the repeats (Strega and repeated Kraken)',
     s_filter: 'Filter', s_filter_ds: 'base opening of the phase',
     s_tones: 'Tones', s_tones_ds: 'one colour per phase',
     s_fspan: 'Filter: 27-day mean', s_fspan_ds: 'total range following the 27-day mean (± half)',
     s_fswell: 'Filter: hit', s_fswell_ds: 'opens on every hit, closes like the activation',
-    s_tjit: 'Tones: hit', s_tjit_ds: 'per-hit offset from the day’s deviation from its 27-day mean',
+    s_att: 'hit: rise', s_att_ds: 'rise time of a hit, in tenths of a second (20 = 2 s; 0 = instant attack)', s_rlong: 'hit: decay, weak day', s_rlong_ds: 'in tenths of a second (60 = 6 s; 0 = original short decay, 1.2 to 0.22 s)', s_rshort: 'hit: decay, strong day', s_rshort_ds: 'in tenths of a second (40 = 4 s), for a day at the cycle maximum', s_tglide: 'Tones: glide', s_tglide_ds: 'in bars: time to cover the full range (constant speed)', s_tswing: 'Tones: back and forth', s_tswing_ds: '1: Tones keeps going up then down, each sweep a different length', s_tfloor: 'back and forth: floor', s_tfloor_ds: 'lowest Tones value (0: full range)', s_tmin: 'back and forth: minimum length', s_tmin_ds: 'each sweep covers from this share (in %) to 100 % of the room left in its direction, from the day and a draw; a short sweep lasts less (constant speed)', s_tjit: 'Tones: hit', s_tjit_ds: 'per-hit offset from the day’s deviation from its 27-day mean',
     s_kpulse: 'Kraken hits', s_kpulse_ds: 'played by the Strega: pulse height (0 = off); the muted Kraken feeds its input',
     a_base: 'Absorb', a_base_ds: 'share of the filtered sound absorbed: duller echo (0-10 V; Absorb knob fully right)',
     a_span: 'Absorb: 27-day mean', a_span_ds: 'total range; an active rotation brightens the echo',
@@ -1334,21 +1363,20 @@ const TEXTS = {
     p_freq: 'QPAS cutoff', p_freq_ds: 'Kraken echo in the Strega: dark at minimum, brighter later (FREQ1 CV)',
     p_fspan: 'QPAS: 27-day mean', p_fspan_ds: 'total cutoff range following the 27-day mean',
     p_level: 'QPAS level', p_level_ds: 'amount of Kraken sent to the Strega (Level CV, exponential response)',
-    s_hits: 'Strega hits', s_hits_ds: '“burst” test, 18-step loop',
+    s_hits: 'Strega hits', s_hits_ds: '“burst” test, 18-step loop (64 in phase 2)',
     s_kick: 'dry Crater', s_kick_ds: 'the drone plays in every phase',
     s_snare: 'Kraken', s_snare_ds: '16-step loop, then 12 in state 5',
-    s_frac: 'calm Strega', s_frac_ds: 'slow swells after 7 or more spotless days, phase 1, 32-step loop', s_cpulse: 'calm Strega: height', s_cpulse_ds: 'height of a calm swell, decay from 1.5 to 3 s depending on the spotless run',
+    s_frac: 'calm Strega', s_frac_ds: 'slow swells after 14 or more spotless days, phase 1, 32-step loop', s_ctones: 'calm Strega: Tones', s_ctones_ds: 'colour of each calm swell: the more days with spots over 27 days, the higher Tones (100 % spotless: nothing added)', s_cjit: 'calm Strega: Tones offset', s_cjit_ds: 'offset drawn for each swell (± this value, reproducible), at least 6 from the previous one; Tones stays between 4 and 48 (output 29 at 0-10 V)', s_cpulse: 'calm Strega: height', s_cpulse_ds: 'height of a calm swell, decay from 1.5 to 3 s depending on the spotless run',
     t_shell: 'Kraken SHELL', t_shell_ds: 'dull → bright',
     t_snares: 'Kraken SNARES', t_snares_ds: 'little → much snare',
-    q_strega: 'Strega level', q_strega_ds: 'Quad VCA channel 2; the Sub (channel 3) follows',
-    q_frac: 'Fracture level', q_frac_ds: 'Quad VCA channel 1; the Fracture no longer plays (102 at most if it returns)',
+    q_strega: 'Strega level', q_strega_ds: 'Quad VCA channel 2 (the Sub, channel 3, is unplugged)',
     r_blend: 'Ruina Blend', r_blend_ds: '0 = dry, 127 = processed only; Blend knob fully left',
-    sg_hint: 'Audio: Strega <code>Modular Level Output</code> → Quad VCA <code>IN 2</code> (level: FH-2 · 4), Fracture <code>OUT L</code> → <code>IN 1</code> (level: output 10), <code>OUT 4/MIX</code> → Ruina <code>In L</code>, Ruina → Praga channels 1 and 2 (the form drives their <code>vol</code>, mute and reverb send); a copy of the Kraken output → QPAS (low-pass) → Strega <code>External Substance In</code> (the repeated Kraken). CV from the third FHX-8CV, 0-5 V, 14-bit CC on the bench channel: <b>26</b> → <code>Activation CV</code>, <b>27</b> → <code>Decay CV</code>, <b>28</b> → <code>Filter CV</code>, <b>29</b> → <code>Tones CV</code>. Pitch: FH-2 · 7 through a multiple → <code>Tonic 1V/Oct</code>, same note as the Crater. Knobs: <code>Activation Constant</code>, <code>Activation Interference</code>, <code>Strength</code> and <code>Tones</code> fully left, <code>External Constant</code> around 11 o’clock, <code>Blend</code> around 1 o’clock; CV attenuverters around 3 o’clock (at 12 o’clock, the CV does not pass). STOP: activation, decay and filter to 0, Quad VCA levels to 0: the Strega and the Fracture fall silent.',
+    sg_hint: 'Audio: Strega <code>Modular Level Output</code> → Quad VCA <code>IN 2</code> (level: FH-2 · 4), <code>OUT 4/MIX</code> → Ruina <code>In L</code>, Ruina → Praga channels 1 and 2 (the form drives their <code>vol</code>, mute and reverb send); a copy of the Kraken output → QPAS (low-pass) → Strega <code>External Substance In</code> (the repeated Kraken). CV from the third FHX-8CV, 0-5 V (29 at 0-10 V), 14-bit CC on the bench channel: <b>26</b> → <code>Activation CV</code>, <b>27</b> → <code>Decay CV</code>, <b>28</b> → <code>Filter CV</code>, <b>29</b> → <code>Tones CV</code>. Pitch: FH-2 · 7 through a multiple → <code>Tonic 1V/Oct</code>, same note as the Crater. Knobs: <code>Activation Constant</code>, <code>Activation Interference</code>, <code>Strength</code> and <code>Tones</code> fully left, <code>External Constant</code> around 11 o’clock, <code>Blend</code> around 1 o’clock; CV attenuverters around 3 o’clock, <code>Tones CV</code> fully right (at 12 o’clock, the CV does not pass). Agitation (phase 5): <code>Agitation Function Out</code> → <code>Time Modulation Input</code>, FH-2 · 5 → <code>Begin and End In</code>, output 10 → <code>Speed CV In</code>, output 22 → <code>Time CV In</code>; <code>Time Modulation Combo Control</code> starting fully left. STOP: activation, decay and filter to 0, Quad VCA level to 0, agitation stopped: the Strega falls silent.',
     sg_hint2: 'CC values 0-127, except the hit caps. Strega values are smoothed over 2 bars; Kraken timbres are centres, each hit departs slightly from them according to the day. Stored in this browser.',
     rh_th: 'threshold', rh_anchor: 'anchor on beat 1', rh_dens: '≈ {x} hits / {n} steps over cycle {c}',
-    v_kick: 'kick: activity peaks', v_snare: 'snare: rises', v_strega: 'Strega: bursts above the 27-day mean (Strega hits)', v_fracture: 'calm Strega: slow activation swells after 7 spotless days (phase 1)', 
+    v_kick: 'kick: activity peaks', v_snare: 'snare: rises', v_strega: 'Strega: bursts above the 27-day mean (Strega hits)', v_fracture: 'calm Strega: slow activation swells after 14 spotless days (phase 1)', 
     test_peak: 'local peak above 27 d', test_rise: 'rise from one day to the next', test_level: 'sunspot number', test_burst: 'above the 27-day mean', test_calm: 'quiet day (spotless at threshold 0)',
-    rh_hint: '<b>Solar rhythm.</b> A <b>drone in every phase</b>: the Crater excites the reverb with held notes at irregular intervals (purple cells), and the Strega’s matter joins from phase 2. Over this bed, the percussion changes from phase to phase, in number and timbre: 1, the Kraken alone, repeated by the Strega, and slow <b>Strega swells</b> after a spotless week; 2, the first <b>Strega hits</b> (tonal swells), sparse; 3, more Strega hits, with the Kraken; 4, the <b>dry Crater</b> returns as dull knocks; 5, all voices, bright and short timbres. From phase 2, <b>the Kraken hits are played by the Strega</b> (short activation pulses); the muted Kraken feeds its external input. Every {p} bars (one phrase), the page reads the {d} days the phrase will cover: the share of days that pass a voice’s test gives its <b>number of hits</b>, capped by state (Strega block); within a level, the strongest days win. Each voice loops on its own length (Crater 16 steps, Kraken 16 then 12, Strega 18, calm Strega 32). From one phrase to the next, at most {m} hits change per voice; each voice <b>mutates</b> (yellow cells) on bars 4 and 8. Snare fill (blue cells) before a state change. The number after the name gives hits / loop length.',
+    rh_hint: '<b>Solar rhythm.</b> A <b>drone in every phase</b>: the Crater excites the reverb with held notes at irregular intervals (purple cells), and the Strega’s matter joins from phase 2. Over this bed, the percussion changes from phase to phase, in number and timbre: 1, the Kraken alone, repeated by the Strega, and slow <b>Strega swells</b> after two spotless weeks; 2, the <b>Strega replaces the Crater</b>: each drone note becomes an activation, <code>Tones</code> in wide back-and-forth sweeps, the dry Kraken; 3, the same with a few Strega hits of its own, the Crater only in the reverb and the dry Kraken; 4, the <b>dry Crater</b> returns as dull knocks; 5, all voices, bright and short timbres, the Strega <code>Time</code> drawing an arch over the phase and its agitation running faster on strong days. In phases 1 to 3, the Kraken plays itself; from phase 4, <b>its hits are played by the Strega</b> (short activation pulses) and the muted Kraken feeds its external input. Every {p} bars (one phrase), the page reads the {d} days the phrase will cover: the share of days that pass a voice’s test gives its <b>number of hits</b>, capped by state (Strega block); within a level, the strongest days win. Each voice loops on its own length (Crater 16 steps, Kraken 16 then 12, Strega 18, calm Strega 32). From one phrase to the next, at most {m} hits change per voice; each voice <b>mutates</b> (yellow cells) on bars 4 and 8. Snare fill (blue cells) before a state change. The number after the name gives hits / loop length.',
 
     cv_title: 'SILSO · current cycle',
 
@@ -1362,7 +1390,7 @@ const TEXTS = {
     f_hint: 'The state comes from the <b>13-month smoothed</b> series normalised within the cycle, cut into 5 equal bands (thresholds 0.2 · 0.4 · 0.6 · 0.8, no hysteresis). It only changes on bars that are multiples of the grid, counted from <code>START</code>, then ramps to the state values (8 bars between states 1 and 2, 4 otherwise). <b>The reverb carries the drone in every phase</b>: long in state 1 (<code>Regen</code> 75), slightly shorter as the sun rises (55 in state 5). The Crater feeds it throughout (send 102 down to 85); its dry <code>vol</code> is 0 in state 1, low in states 2 and 3 (50, 65), full afterwards: each excitation is a <b>held note</b> at an irregular interval drawn from the days, longer (up to 4 s) after a long run of spotless days, shorter (600 down to 250 ms) on days with spots; the Crater holds at its <code>SUSTAIN</code> knob level while the gate is high. The Strega and the Kraken are sent sparingly, so the hits stay legible, except through <b>dub throws</b> (states 2 to 5): the send opens for one step on the last snare of each phrase, on the whole fill, and on the Strega hits of bars 4 and 8. <code>Size</code> breathes in states 1 to 3 (±12, ±6, ±4). The <b>frozen wash</b> (state 1 <code>FSU</code> cell, unchecked by default) only exists in the <b>trough of the minimum</b> (blue marker): <code>FSU</code> goes high at the end of the transition that leads there, when the tank is full, and is released at the start of the next one. Buttons 1-5, gate 8CV n°2 · 1 (17), the slider of one of these outputs or <b>Defaults</b>: the form switches to manual (<code>FSU</code> then follows the table cell). <b>STOP mutes the reverb</b> (button): <code>Regen</code> and sends to 0, <code>FSU</code> released, the tail dies out; START restores the state values.',
     f_hint2: 'CC values 0-127 (102 = 8 V = 0 dB on the Praga <code>vol</code> inputs, send fully open on the Hrad). Stored in this browser.',
     f_regen: 'Desmodus Regen', f_size: 'Desmodus Size', f_send13: 'Strega send', f_send15: 'Kraken send', f_send16: 'Crater send',
-    f_vol24: 'Strega vol', f_vol23: 'Kraken vol', f_vol20: 'Crater vol', f_fsu: 'Desmodus FSU',
+    f_vol24: 'Strega vol', f_vol23: 'Kraken vol', f_vol20: 'Crater vol', f_kgap: 'Crater note spacing', f_kgap_ds: 'minimum interval between two drone notes, in steps (40 = 2.5 bars)', f_bloom: 'bloom: threshold', f_bloom_ds: 'a note on a spotless day after at least this many spotless days gets much more reverb (0 = never)', f_bmin: 'bloom: Regen at threshold', f_bmin_ds: 'Regen (19) of the note at the threshold, held during the note then back over 4 bars; the Crater send opens to 127 during the note', f_bmax: 'bloom: Regen at 30 days', f_bmax_ds: 'Regen after 30 spotless days (96: just below 3 o’clock, no ducking)', f_fsu: 'Desmodus FSU',
 
     mod_title: 'SILSO timbres → 8CV', mod_src: 'source', mod_lo: 'low', mod_hi: 'high', mod_inv: 'invert',
     mod_ramp: 'Ramp between windows', mod_steps: 'Steps (one value per window)',
@@ -1371,7 +1399,7 @@ const TEXTS = {
 
     mel_title: 'Melody → Crater', mel_scale: 'Scale', mel_root: 'Root', mel_walk: 'Walk min / max',
     mel_span: 'Step range', mel_div: 'Division', mel_note: 'Note played',
-    mel_hint: 'Note sent to the MIDI/CV converter on channel 7 (output FH-2 · 7 → Crater <code>1V/oct</code> and, through a multiple, Strega <code>Tonic 1V/Oct</code>). <b>Follows the form state</b> (default): the note changes every 4 bars in states 1 and 2, then 2, 1 and half a bar in state 5; otherwise, the fixed division above. <b>Notes</b>: by default they follow activity (27-day mean normalised within the cycle, placed on the scale between the walk bounds); otherwise, bounded random walk. The dry Crater is only heard in states 4 and 5: before that, each note builds up in the reverb.',
+    mel_hint: 'Note sent to the MIDI/CV converter on channel 7 (output FH-2 · 7 → Crater <code>1V/oct</code> and, through a multiple, Strega <code>Tonic 1V/Oct</code>). <b>Follows the form state</b> (default): the note changes every 4 bars in states 1 and 2, then 2, 1 and half a bar in state 5; otherwise, the fixed division above. <b>Notes</b>: by default they follow activity (27-day mean normalised within the cycle, placed on the scale between the walk bounds); otherwise, bounded random walk. Each note builds up in the reverb; the dry Crater stays in the background in states 1 to 3 (about -10 dB, then -5 dB) and plays in full in states 4 and 5.',
     m_ambit: 'range <b>{a} → {b}</b> · {d} degrees · {s} semitones ({o} oct.)', m_out: 'max outside scale ({n} degrees)',
     m_per_meas: '{n} notes / bar', m_by_state: 'one note every {b} bars (states 1 → 5)',
     mel_state_l: 'Pace', mel_state: 'follows the form state',
@@ -1387,7 +1415,6 @@ const TEXTS = {
     b_held: 'gates high:', b_none: 'no gate high',
     b_hint: 'A CV at <b>0</b> closes what it drives: a Praga <code>vol</code> goes silent, a Hrad send is cut. On the FH-2: one <b>Triggers</b> row per gate (<code>Trig Type = Gate</code>, channel above, note = output number) and one <code>direct control</code> <b>Mapping</b> per CV (channel above, CC = output number, except 21: CC 25). Green sliders: SILSO timbres; blue: form.',
     b_l9: 'Hrad active 1+2: mute Strega (channel 1) and Fracture (channel 2)',
-    b_l10: 'Quad VCA CV 1: Fracture level (Strega block, per phase)',
     b_l11: 'Hrad active 3: mute Kraken',
     b_l12: 'Hrad active 4: mute Crater',
     b_l13: 'Hrad aux cv 1+2: Strega reverb send. 102 = 8 V = open, 0 = closed. Form, throws',
@@ -1399,7 +1426,6 @@ const TEXTS = {
     b_l19: 'Desmodus Regen: 0 = the knob alone decides. Form',
     b_l20: 'Praga vol channel 4: Crater. 102 = 8 V = 0 dB. Form',
     b_l21: 'Desmodus TONE (CC 25): 0 = low-pass, 64 ≈ neutral, 127 = high-pass. SILSO timbre (deviation)',
-    b_l22: 'Fracture DENSITY: on every hit, very small when the previous hit is 2 bars away, large after 16 bars of silence (DENSITY knob fully left)',
     b_l23: 'Praga vol channel 3: Kraken. 102 = 0 dB. Form',
     b_l24: 'Praga vol channels 1+2: Strega and Fracture. 102 = 0 dB. Form',
 
@@ -1407,8 +1433,7 @@ const TEXTS = {
     af_1: 'Crater <code>TRIG</code>: gate channel 3, note 1 · solar kick',
     af_2: 'Kraken <code>HEAD</code>: gate channel 3, note 2 · solar snare',
     af_3: 'Kraken <code>SHELL</code>: <code>direct control</code>, CC 3 channel 4 (mapping 15) · SILSO timbre + variation on every hit',
-    af_4: 'Quad VCA <code>CV 2</code>: Strega and Sub level (CC 4, 0-5 V)',
-    af_5: 'free (Fracture <code>TRIG</code>: no longer played)',
+    af_4: 'Quad VCA <code>CV 2</code>: Strega level (CC 4, 0-5 V; Sub unplugged)',
     af_6: 'clock Base 6 × 1 (16th notes) → 0-Ctrl B <code>Clock</code>',
     af_7: 'MIDI/CV converter channel 7 → Crater <code>1V/oct</code>',
     af_8: 'LFO Base 96 × 3 → Kraken <code>VELOCITY</code>',
@@ -1416,15 +1441,15 @@ const TEXTS = {
     af_11: 'Hrad <code>active 3</code> (Kraken) / <code>active 4</code> (Crater)',
     af_13: 'Hrad <code>aux cv 1+2</code>: Strega send · form, throws',
     af_15: 'Hrad <code>aux cv 3</code>: Kraken send (form, throws; copy of the Kraken into <code>aux ins 3</code>) / <code>aux cv 4</code>: Crater send (form; copy of the Crater into <code>aux ins 4</code>)',
-    af_10: 'Quad VCA <code>CV 1</code> (Fracture level) / Kraken <code>SNARES</code> · timbre per phase',
+    af_14: 'Kraken <code>SNARES</code> · timbre per phase', af_5: 'Strega <code>Begin and End In</code>: agitation running (gate, per phase)', af_10: 'Strega <code>Speed CV In</code>: agitation speed (from the day’s strength)', af_22: 'Strega <code>Time CV In</code>: Time, centre and arch over the phase',
     af_17: 'Desmodus <code>FSU</code> · form (minimum trough)',
     af_18: 'Desmodus <code>Size</code> / <code>Regen</code> · form',
     af_20: 'Praga <code>vol</code> channel 4 (Crater) · form',
     af_21: 'Desmodus <code>TONE</code>, CC 25 · SILSO timbre (deviation)',
-    af_22: 'Fracture <code>DENSITY</code> (per hit) / Praga <code>vol</code> channel 3 (form)',
+    af_23: 'Praga <code>vol</code> channel 3: Kraken (form)',
     af_24: 'Praga <code>vol</code> channels 1+2 (Strega) · form',
     af_25: 'Ruina <code>Blend</code> CV (CC 9, 0-5 V) · one value per phase', af_26: 'Strega <code>Activation CV</code> / <code>Decay CV</code> · matter, hits, repeats',
-    af_28: 'Strega <code>Filter CV</code> / <code>Tones CV</code> · per phase',
+    af_28: 'Strega <code>Filter CV</code> (0-5 V) / <code>Tones CV</code> (0-10 V) · per phase',
     af_30: 'QPAS <code>FREQ1 CV</code> (CC 30, 0-5 V) / <code>Level CV</code> (31, CC 31, 0-8 V)', af_32: 'Strega <code>Absorb CV In</code> (CC 12, 0-10 V)', af_65: 'clock with no physical output → reset of LFO FH-2 · 8',
     af_hint: 'The four voices are triggered directly by the data: gates on channel 3, note = FH-2 output number. Output FH-2 · 3 drives the Kraken <code>SHELL</code>.',
 
@@ -1878,6 +1903,7 @@ const Rhythm = {
   table(v, act) {
     let P = v.loop;
     if (P.alt && (act || 1) < (P.from || 1)) P = Object.assign({}, P, P.alt);
+    if (P.byState && P.byState[act || 1]) P = Object.assign({}, P, P.byState[act || 1]);
     return Object.assign({}, P, { max: Strega.max(v.id) || P.max || [0, 0, 0, 0, 0] });
   },
 
@@ -2009,7 +2035,8 @@ const Rhythm = {
   droneGap(d) {
     const D = CFG.drone, q = Math.max(1, D.quant || 1), j = this.droneDay(d);
     const g = j.spot ? D.spotGap - (D.spotGap - D.min) * j.x : D.calmGap + (D.max - D.calmGap) * j.x;
-    return Math.max(q, Math.round(g / q) * q);
+    const kr = Forme.row('kgap'), kg = kr && Forme.cur ? (Forme.vals(kr)[Forme.cur - 1] || 0) : 0;   // espacement minimal (SOLAR-v061)
+    return Math.max(q, kg, Math.round(g / q) * q);
   },
 
   // duree du gate (ms) d'une excitation tombee sur le jour d
@@ -2079,7 +2106,6 @@ const Rhythm = {
 
   // ---- appels de Clock
   onStart() {
-    Mod.prev = {};
     this.meas = 0; this.rep = 0; this.pm = 0; this.g = 0; this.fillOn = false; this.bar0 = 0; this.mut = {};
     if (Silso.ready) this.metric(Silso.i, false);
   },
@@ -2145,6 +2171,7 @@ const Rhythm = {
 
   onStep(t, s) {
     if (!Silso.ready) return;
+    if (this.days) Strega.dNow = this.days[s % this.days.length];   // jour du pas : le fond de la Strega le suit (SOLAR-v057)
     const sw = (s % 2) ? CFG.rhythm.swing * TICKS_PER_STEP * Clock.tickDur() : 0;   // shuffle
     const T = CFG.forme.throws, thr = Forme.throwsOn();
     CFG.rhythm.voices.forEach(v => {
@@ -2168,6 +2195,8 @@ const Rhythm = {
       const g = (v.id === 'kick' && this.droneOn() && this.droneSet && this.droneSet.has(s)) ? this.droneSet.get(s) : v.gate;
       Mod.hit(v.id, t + sw, d, this.bar0 + s);         // SHELL, DENSITY : valeur propre a la frappe, avant le trigger
       if (v.id === 'snare') Strega.kraken(t + sw, d);  // la Strega joue la frappe (le Kraken, muet, nourrit son entree)
+      // phase 2 (SOLAR-v059) : chaque note du drone devient une activation de la Strega (le Crater, coupe, joue encore)
+      if (v.id === 'kick' && this.droneOn() && this.droneSet && this.droneSet.has(s)) { Strega.drone(t + sw, d, g); Forme.bloom(t + sw, d, g); }
       Midi.note(CFG.rhythm.gateCh, v.out, 100, t + sw, g);
       Mon.voice(t + sw, v.id);
     });
@@ -2194,10 +2223,8 @@ const Rhythm = {
 // (echelle CC 0-127), envoyee en 14 bits sur le canal du banc.
 const Mod = {
   last: [],
-  prev: {},         // id de voix -> pas absolu de sa frappe precedente (sorties `gap`)
 
   x(o, i) {
-    if (o.gap) return 0;                            // DENSITY au repos : la plus petite valeur
     const c = Strega.center(o.n, o);                // un timbre par phase (bloc Strega)
     if (!isNaN(c)) return c;
     const v = Cycles.norm(o.src, i, Cycles.of(i));
@@ -2244,27 +2271,10 @@ const Mod = {
   },
 
   // frappe d'une voix : les sorties `perHit` de cette voix prennent une valeur propre a la frappe
-  // espace avant une frappe (sorties `gap`) : 0 si la frappe precedente est a `min` pas ou moins,
-  // 1 a `max` pas ou plus (ou premiere frappe), courbe `curve` ; plus un leger ecart selon le jour
-  gapX(o, id, d, abs) {
-    const G = o.gap, p = this.prev[id];
-    const g = (p === undefined || abs === undefined) ? G.max : abs - p;
-    const u = clamp01((Math.min(G.max, Math.max(G.min, g)) - G.min) / Math.max(1, G.max - G.min));
-    const w = (d >= 0 && !(Series.vraw[d] > 0)) ? Rhythm.droneDay(d).x : 0;
-    return clamp01(Math.pow(u, G.curve || 1) + (G.wobble || 0) * w);
-  },
-
   hit(id, t, d, abs) {
     if (!Silso.ready) return;
     CFG.mod.forEach((o, k) => {
       if (!o.on || o.perHit !== id) return;
-      if (o.gap) {
-        const x = this.gapX(o, id, d, abs), { cc, v14 } = this.value(o, x);
-        this.last[k] = v14;
-        Midi.cc14(o.cc, CFG.bench.ccCh, v14, t);
-        Clock.queue.push({ t, kind: 'mod', k, x, cc, v14 });
-        return;
-      }
       const x0 = this.x(o, Silso.i); if (isNaN(x0)) return;
       const j = this.dayDev(d), x = clamp01(x0 + (o.jitter || 0) * j);
       const { cc, v14 } = this.value(o, x);
@@ -2272,7 +2282,6 @@ const Mod = {
       Midi.cc14(o.cc, CFG.bench.ccCh, v14, t);
       Clock.queue.push({ t, kind: 'mod', k, x, cc, v14 });
     });
-    if (abs !== undefined) this.prev[id] = abs;
   },
 
   // le curseur du banc reprend la main sur la sortie n
@@ -2306,6 +2315,7 @@ const Forme = {
   ramp: null,       // { to, items: [{ L, from, to, last }], done, ticks, fsuEnd }
   log: [],          // changements : { meas, from, to, auto } (affichage et tests)
   fsuLog: [],       // FSU : { meas, on } (affichage et tests)
+  bloomLog: [],     // floraisons : { t, d, run, v, g } (tests)
   fullFrom: 0,      // mesure depuis laquelle les valeurs de l'etat sont atteintes en lecture
   defaults: null,   // copie des valeurs du fichier, pour « revenir »
 
@@ -2348,7 +2358,7 @@ const Forme = {
 
   // ---- appels de Clock
   onStart() {
-    this.meas = 0; this.fullFrom = 0;
+    this.meas = 0; this.fullFrom = 0; this.bl = null;
     if (!CFG.forme.stopDry) return;
     // START : la reverbe reprend les valeurs de l'etat (coupees par le STOP)
     const now = performance.now();
@@ -2380,6 +2390,7 @@ const Forme = {
   onTick(t) {
     Throw.tick(t);
     this.breathe(t);
+    this.follow(t);
     const R = this.ramp; if (!R) return;
     if (!R.started) { R.started = true; return; }   // tick de depart : la rampe finit pile sur une mesure
     R.done++;
@@ -2413,6 +2424,43 @@ const Forme = {
     this.breathLast = v;
     Midi.send([0xb0 | ((CFG.bench.ccCh - 1) & 0x0f), UI.ccOf(L) & 0x7f, v & 0x7f], t);
     Clock.queue.push({ t, kind: 'forme', L, v });
+  },
+
+  // retour de Regen apres une floraison (SOLAR-v061) : tenue pendant la note, puis retour lineaire vers la
+  // valeur de l'etat, hors rampes
+  follow(t) {
+    const C = CFG.forme.calm, l = C && this.row(C.n), L = C && this.line(C.n);
+    if (!this.bl) return;
+    if (!C || !l || !L || !this.cur || this.ramp || !Silso.ready) { this.bl = null; return; }
+    if (t < this.bl.t1) return;
+    const base = this.vals(l)[this.cur - 1], p = Math.min(1, (t - this.bl.t1) / this.bl.dur);
+    const v = Math.round(this.bl.v0 + (base - this.bl.v0) * p);
+    if (p >= 1) this.bl = null;
+    if (v === this.rlast) return;
+    this.rlast = v;
+    Midi.send([0xb0 | ((CFG.bench.ccCh - 1) & 0x0f), UI.ccOf(L) & 0x7f, v & 0x7f], t);
+    Clock.queue.push({ t, kind: 'forme', L, v });
+  },
+
+  // floraison d'une note du Crater (SOLAR-v061) : sur un jour sans tache au bout d'au moins `bloom` jours sans
+  // tache, Regen monte de bmin (au seuil) a bmax (30 jours, echelle log), tenu pendant la note g (ms), et
+  // l'envoi du Crater (16) s'ouvre a 127 pendant la note ; puis Regen revient en CFG.forme.bloom.bars mesures
+  bloom(t, d, g) {
+    const B = CFG.forme.bloom, rb = this.row('bloom'), C = CFG.forme.calm, L = C && this.line(C.n);
+    if (!B || !rb || !L || !this.cur || this.ramp || !(d >= 0)) return false;
+    const th = this.vals(rb)[this.cur - 1] || 0; if (!(th > 0)) return false;
+    const run = Rhythm.calmRun(d); if (run < th) return false;
+    const lo = this.vals(this.row('bmin'))[this.cur - 1], hi = this.vals(this.row('bmax'))[this.cur - 1];
+    const y = clamp01(Math.log(run / th) / Math.log(Math.max(th + 1, 30) / th));
+    const v = Math.round(Math.min(127, Math.max(0, lo + (hi - lo) * y)));
+    Midi.send([0xb0 | ((CFG.bench.ccCh - 1) & 0x0f), UI.ccOf(L) & 0x7f, v & 0x7f], t);
+    Clock.queue.push({ t, kind: 'forme', L, v });
+    this.rlast = v;
+    this.bl = { t1: t + g, v0: v, dur: Math.max(1, B.bars * Rhythm.measMs()) };
+    Throw.fire(16, t, B.send, g);
+    this.bloomLog.push({ t, d, run, v, g });
+    if (this.bloomLog.length > 200) this.bloomLog.splice(0, this.bloomLog.length - 200);
+    return true;
   },
 
   // FSU vers on/off ; on : a la fin de la rampe en cours s'il y en a une
@@ -2534,11 +2582,11 @@ const Throw = {
 
   send(n, v, t) { Midi.send([0xb0 | ((CFG.bench.ccCh - 1) & 0x0f), n & 0x7f, v & 0x7f], t); },
 
-  fire(n, t) {
+  fire(n, t, val, ms) {                               // val, ms : valeur et duree propres (floraison, SOLAR-v061)
     const T = CFG.forme.throws, L = Forme.line(n);
     if (!L) return;
-    const end = t + T.steps * TICKS_PER_STEP * Clock.tickDur();
-    this.send(UI.ccOf(L), T.val, t);
+    const end = t + (ms > 0 ? ms : T.steps * TICKS_PER_STEP * Clock.tickDur());
+    this.send(UI.ccOf(L), val === undefined ? T.val : val, t);
     this.ends.set(n, Math.max(this.ends.get(n) || 0, end));
     this.log.push({ n, t, meas: Rhythm.meas - 1 });
     if (this.log.length > 400) this.log.splice(0, this.log.length - 400);
@@ -2613,7 +2661,7 @@ const FUI = {
     const tb = $('fTable');
     let h = '<tr><th>' + t('output') + '</th>' + [1, 2, 3, 4, 5].map(k => '<th data-k="' + k + '">' + k + '</th>').join('') + '</tr>';
     CFG.forme.lignes.forEach((l, r) => {
-      h += '<tr><td>' + (l.flag
+      h += '<tr><td>' + (l.flag || l.num
         ? '<span class="nm">' + t(l.key) + '</span><span class="ds">' + t(l.key + '_ds') + '</span>'
         : '<span class="nm">' + UI.outName(l.n) + ' <span class="gn">(' + l.n + ')</span></span><span class="ds">' + t(l.key) + '</span>') + '</td>';
       Forme.vals(l).forEach((v, k) => {
@@ -2688,7 +2736,7 @@ const FUI = {
 // STOP : activation, decay et filtre a 0, la Strega se tait et ses repetitions s'eteignent.
 const Strega = {
   env: [],          // frappes en cours : { t, a, tau }
-  cur: { act: 0, dec: 0, fil: 0, ton: 0, vs: 0, vf: 0, rb: 0, ab: 0, pf: 0, pl: 0 },   // valeurs lissees 0-1 (hors frappes)
+  cur: { act: 0, adv: 0, dec: 0, fil: 0, ton: 0, vs: 0, rb: 0, ab: 0, pf: 0, pl: 0, tm: 0, sp: 0 },   // valeurs lissees 0-1 (hors frappes)
   last: {},         // sortie -> derniere valeur 14 bits envoyee
   lastT: null,      // date du dernier tick traite
   log: [],          // frappes : { t, a, tau, meas } (tests)
@@ -2718,7 +2766,6 @@ const Strega = {
       fil: clamp01((this.val('s_filter') + this.val('s_fspan') * (x - 0.5)) / 127),
       ton: clamp01(this.val('s_tones') / 127),
       vs: clamp01(this.val('q_strega') / 127),       // Quad VCA, canal 2 (et 3 par cascade)
-      vf: clamp01(this.val('q_frac') / 127),         // Quad VCA, canal 1
       rb: clamp01(this.val('r_blend') / 127),        // Ruina Blend
       ab: clamp01((this.val('a_base') - this.val('a_span') * (x - 0.5)) / 127),  // Absorb : rotation active -> plus bas
       pf: clamp01((this.val('p_freq') + this.val('p_fspan') * (x - 0.5)) / 127),  // QPAS FREQ1
@@ -2740,12 +2787,42 @@ const Strega = {
     const a = this.val('s_swell') / 127 * (0.6 + 0.4 * q);
     if (!(a > 0)) return;
     if (this.lastT === null) this.update(t);           // frappe au tout premier pas : valeurs de l'etat d'abord
-    const tau = F.swellMs[0] - (F.swellMs[0] - F.swellMs[1]) * q;
-    this.env.push({ t, a, tau, f: 0.6 + 0.4 * q });
+    // montee et retombee : du tableau quand elles y sont (SOLAR-v055, x 100 ms), sinon swellMs
+    const ta = this.val('s_att') * 100, rl = this.val('s_rlong') * 100, rs = this.val('s_rshort') * 100;
+    const tau = rl > 0 ? rl - (rl - (rs || rl)) * q : F.swellMs[0] - (F.swellMs[0] - F.swellMs[1]) * q;
+    this.env.push({ t, a, tau, ta, f: 0.6 + 0.4 * q });
     this.tonOff = this.val('s_tjit') / 127 * Mod.dayDev(d);
-    this.log.push({ t, a, tau, meas: Rhythm.meas - 1, ton: this.tonOff });
+    if (this.val('s_tswing') > 0) {                    // Tones : allers-retours, la frappe relance le glissement vers l'autre bout
+      const from = this.tonGlideAt(t);
+      const gl = this.val('s_tglide');                // en mesures : glissement lineaire jusqu'a la suivante (SOLAR-v056)
+      const S = this.swingTon(d, from);
+      this.tonG = { t0: t, ta: gl > 0 ? S.dur : ta, lin: gl > 0, from, to: S.to };
+    }
+    this.log.push({ t, a, tau, ta, meas: Rhythm.meas - 1, ton: this.tonOff, abs: this.tonPrev });
     if (this.log.length > 400) this.log.splice(0, this.log.length - 400);
     this.out(t);                                       // attaque a l'instant de la frappe
+  },
+
+  // ecart de Tones (en fraction) d'une frappe a glissement, a la date t
+  tonGlideAt(t) {
+    const G = this.tonG; if (!G) return 0;
+    if (!(G.ta > 0) || t >= G.t0 + G.ta) return G.to;
+    const u = Math.max(0, (t - G.t0) / G.ta), s = G.lin ? u : u * u * (3 - 2 * u);
+    return G.from + (G.to - G.from) * s;
+  },
+
+  // note du drone jouee par la Strega (SOLAR-v059) : activation de la duree de la note g (ms) ; montee 0,4 g
+  // (120 ms a 2 s), retombee de constante g ; hauteur selon la force du jour, comme une frappe
+  drone(t, d, g) {
+    if (!(this.val('s_dhit') > 0)) return;
+    const q = this.dayQ(d), a = this.val('s_swell') / 127 * (0.6 + 0.4 * q);
+    if (!(a > 0)) return;
+    if (this.lastT === null) this.update(t);
+    const ta = Math.min(2000, Math.max(120, 0.4 * g)), tau = Math.max(150, g);
+    this.env.push({ t, a, tau, ta, f: 0.6 + 0.4 * q });
+    this.log.push({ t, a, tau, ta, g, meas: Rhythm.meas - 1, kind: 'd' });
+    if (this.log.length > 400) this.log.splice(0, this.log.length - 400);
+    this.out(t);
   },
 
   // frappe du Kraken jouee par la Strega (SOLAR-v045) : impulsion courte sur l'activation, avec
@@ -2775,16 +2852,93 @@ const Strega = {
     const tau = F.calmMs[0] + (F.calmMs[1] - F.calmMs[0]) * y;
     if (this.lastT === null) this.update(t);
     this.env.push({ t, a, tau, f: 0.6 + 0.4 * y });
-    this.log.push({ t, a, tau, meas: Rhythm.meas - 1, kind: 'c' });
+    // couleur du gonflement (SOLAR-v051) : plus il y a eu de jours avec taches sur 27 jours, plus Tones monte
+    this.tonCalm = this.calmTon(d);
+    this.log.push({ t, a, tau, meas: Rhythm.meas - 1, kind: 'c', ton: this.tonCalm, abs: this.tonPrev });
     if (this.log.length > 400) this.log.splice(0, this.log.length - 400);
     this.out(t);
+  },
+
+  // Tones d'un gonflement calme, en ecart a la valeur de l'etat : centre tire des donnees (SOLAR-v051) plus
+  // un ecart de +- s_cjit tire au hasard, reproductible (jour et rang de la mesure), au moins 12 avec le
+  // gonflement precedent (sinon l'autre cote), Tones borne a 8-96 (SOLAR-v052)
+  calmTon(d) {
+    return this.jitTon(d, this.val('s_ctones') * Math.min(1, (1 - this.spotless27(d)) / 0.6), this.val('s_cjit'));
+  },
+  // Tones d'une frappe en ecart (fraction) a la valeur de l'etat : centre = etat + c, plus un ecart de +- J
+  // tire au hasard, reproductible (jour et rang de la mesure), au moins 12 avec la frappe precedente
+  // (sinon l'autre cote), Tones borne a 8-96 (SOLAR-v052, partage par les frappes en SOLAR-v055)
+  // allers-retours (SOLAR-v058, longueurs variables SOLAR-v065) : le sens alterne ; chaque aller parcourt de
+  // s_tmin % a 100 % de la place disponible dans ce sens (moitie : ecart du jour a sa moyenne 27 j ; moitie :
+  // tirage reproductible) ; Tones reste entre le plancher s_tfloor et 127 ; vitesse constante : toute la course
+  // en s_tglide mesures. Rend { to (ecart, fraction), dur (ms) }
+  swingTon(d, from) {
+    const base = this.cur.ton * 127, now = base + from * 127, fl = this.val('s_tfloor');
+    let up = (this.swUp === undefined || this.swUp === null) ? now < (fl + 127) / 2 : !this.swUp;
+    if ((up ? 127 - now : now - fl) < 4) up = !up;                 // deja au bout : on repart dans l'autre sens
+    this.swUp = up;
+    const room = Math.max(0, up ? 127 - now : now - fl);
+    const u = 0.5 * Math.abs(Mod.dayDev(d)) + 0.5 * (this.hash(d) + 1) / 2, mn = clamp01(this.val('s_tmin') / 100);
+    const v = Math.min(127, Math.max(fl, now + (up ? 1 : -1) * (mn + (1 - mn) * u) * room));
+    this.tonPrev = v;
+    const full = Math.max(1, 127 - fl), bars = this.val('s_tglide') * Math.abs(v - now) / full;
+    return { to: (v - base) / 127, dur: Math.max(0.5, bars) * Rhythm.measMs() };
+  },
+  // tirage reproductible dans [-1, 1] : jour et rang de la mesure (hachage entier, sans etat)
+  hash(d) {
+    let h = ((d + 1) * 2654435761 + (Rhythm.meas + 1) * 40503) >>> 0;
+    h = Math.imul(h ^ (h >>> 16), 2246822507) >>> 0; h = Math.imul(h ^ (h >>> 13), 3266489909) >>> 0; h = (h ^ (h >>> 16)) >>> 0;
+    return h / 4294967295 * 2 - 1;
+  },
+  jitTon(d, cAdd, J) {
+    const base = this.cur.ton * 127, c = base + cAdd;
+    const TJ = CFG.strega.tonJit, lo = TJ.lo, hi = TJ.hi, gap = TJ.gap, clamp = v => Math.min(hi, Math.max(lo, v));
+    const r = this.hash(d);
+    let v = J > 0 ? clamp(c + J * r) : clamp(c);
+    const p = this.tonPrev;
+    if (J > 0 && p !== undefined && p !== null && Math.abs(v - p) < gap) {
+      const w = clamp(c - J * r);                                    // l'autre cote
+      v = Math.abs(w - p) >= gap ? w : (p + gap <= hi ? p + gap : p - gap);
+    }
+    this.tonPrev = v;
+    return (v - base) / 127;
+  },
+
+  // position du lisse 13 mois dans la bande de l'etat en cours (0 au seuil d'entree, 1 au seuil de sortie ou au
+  // maximum) : a l'etat 5, monte vers le maximum du cycle puis redescend (SOLAR-v067)
+  archPos() {
+    if (!Silso.ready) return 0.5;
+    const S = CFG.forme.seuils, k = this.st(), lo = k > 1 ? S[k - 2] : 0, hi = k <= S.length ? S[k - 1] : 1;
+    const x = Cycles.norm(CFG.forme.src, Silso.i, Cycles.of(Silso.i));
+    return isNaN(x) ? 0.5 : clamp01((x - lo) / Math.max(1e-3, hi - lo));
+  },
+  // gate de l'agitation (FH-2 · 5 -> Begin and End In) : haut tant que la ligne g_agit le demande, en lecture
+  agit(on, t) {
+    const n = CFG.strega.agitGate; if (!n) return;
+    on = !!on && Clock.running;
+    if (on === !!this.agitOn) return;
+    this.agitOn = on;
+    const ch = (CFG.rhythm.gateCh - 1) & 0x0f;
+    Midi.send(on ? [0x90 | ch, n & 0x7f, 100] : [0x80 | ch, n & 0x7f, 0], t === undefined ? performance.now() : t);
+  },
+
+  // part des jours sans tache sur les 27 jours qui finissent au jour d (jours manquants ignores ; aucun : 1)
+  spotless27(d) {
+    const R = Series.vraw; let n = 0, z = 0;
+    for (let j = Math.max(0, d - 26); j <= d; j++) { const x = R[j]; if (isNaN(x)) continue; n++; if (x === 0) z++; }
+    return n ? z / n : 1;
   },
 
   // somme des frappes en cours a la date t
   envAt(t, key) {
     let e = 0;
-    this.env = this.env.filter(h => t - h.t < 6 * h.tau);
-    this.env.forEach(h => { if (t >= h.t) e += (key ? h[key] : h.a) * Math.exp(-(t - h.t) / h.tau); });
+    this.env = this.env.filter(h => t - h.t < (h.ta || 0) + 6 * h.tau);
+    this.env.forEach(h => {                            // montee lente (ta > 0, en S) puis retombee exponentielle
+      if (t < h.t) return;
+      const dt = t - h.t, ta = h.ta || 0, k = key ? h[key] : h.a;
+      if (ta > 0 && dt < ta) { const u = dt / ta; e += k * u * u * (3 - 2 * u); }
+      else e += k * Math.exp(-(dt - ta) / h.tau);
+    });
     return e;
   },
 
@@ -2794,12 +2948,27 @@ const Strega = {
     this.lastT = t;
     const k = 1 - Math.exp(-dt / Math.max(1, CFG.strega.smooth * Rhythm.measMs()));
     const T = this.targets();
-    ['act', 'dec', 'fil', 'ton', 'vs', 'vf', 'rb', 'ab', 'pf', 'pl'].forEach(n => { this.cur[n] += (T[n] - this.cur[n]) * k; });
+    ['act', 'dec', 'fil', 'ton', 'vs', 'rb', 'ab', 'pf', 'pl'].forEach(n => { this.cur[n] += (T[n] - this.cur[n]) * k; });
+    // fond qui suit le jour du pas (SOLAR-v057) : lissage court, quart de mesure
+    const ka = 1 - Math.exp(-dt / Math.max(1, CFG.strega.adevBars * Rhythm.measMs()));
+    const adv = this.val('s_adev') / 127 * (this.dNow >= 0 ? Mod.dayDev(this.dNow) : 0);
+    this.cur.adv += (adv - this.cur.adv) * ka;
+    // Time (arche sur la phase) et vitesse de l'agitation (SOLAR-v067)
+    const F = CFG.strega, kt = 1 - Math.exp(-dt / Math.max(1, F.timeBars * Rhythm.measMs())), ks = 1 - Math.exp(-dt / Math.max(1, F.speedBars * Rhythm.measMs()));
+    const tm = clamp01((this.val('t_time') + this.val('t_tarch') * (this.archPos() - 0.5)) / 127);
+    const sp = clamp01((this.val('a_speed') + this.val('a_sday') * this.dayQ(this.dNow >= 0 ? this.dNow : Silso.i)) / 127);
+    if (dt === Infinity) { this.cur.tm = tm; this.cur.sp = sp; } else { this.cur.tm += (tm - this.cur.tm) * kt; this.cur.sp += (sp - this.cur.sp) * ks; }
   },
 
   onTick(t) {
     if (!Silso.ready) return;
     this.update(t);
+    // allers-retours de Tones independants des frappes (SOLAR-v059) : un glissement fini, le suivant part
+    if (this.val('s_tswing') > 0 && this.val('s_tglide') > 0 && (!this.tonG || t >= this.tonG.t0 + this.tonG.ta)) {
+      const from = this.tonGlideAt(t);
+      const S = this.swingTon(this.dNow >= 0 ? this.dNow : Silso.i, from);
+      this.tonG = { t0: t, ta: S.dur, lin: true, from, to: S.to };
+    }
     this.out(t);
     this.out(t + Clock.tickDur() / 2, true);           // retombee plus fine : deux valeurs par tick
   },
@@ -2807,7 +2976,7 @@ const Strega = {
   out(t, actOnly) {
     const F = CFG.strega;
     // les frappes se logent dans la marge au-dessus du fond, saturation douce (jamais d'ecretage)
-    const b = clamp01(this.cur.act), room = Math.max(1e-3, 1 - b);
+    const b = clamp01(this.cur.act + this.cur.adv), room = Math.max(1e-3, 1 - b);
     this.send(F.act, clamp01(b + room * Math.tanh(this.envAt(t) / room)), t);
     // filtre : valeur lissee + ouverture des frappes en cours, logee dans la marge au-dessus (saturation douce)
     const fb = clamp01(this.cur.fil), fr = Math.max(1e-3, 1 - fb), fo = this.val('s_fswell') / 127 * this.envAt(t, 'f');
@@ -2820,13 +2989,16 @@ const Strega = {
     }
     if (actOnly) return;
     this.send(F.decay, this.cur.dec, t);
-    const tj = this.val('s_tjit') > 0 ? (this.tonOff || 0) : 0;
+    const tj = (this.val('s_tjit') > 0 ? (this.tonOff || 0) : 0) + (this.val('s_ctones') > 0 || this.val('s_cjit') > 0 ? (this.tonCalm || 0) : 0)
+      + (this.val('s_tswing') > 0 ? this.tonGlideAt(t) : 0);
     this.send(F.tones, clamp01(this.cur.ton + tj), t);
     if (F.vcaS) this.send(F.vcaS, this.cur.vs, t);
-    if (F.vcaF) this.send(F.vcaF, this.cur.vf, t);
     if (F.rBlend) this.send(F.rBlend, this.cur.rb, t);
     if (F.qFreq) this.send(F.qFreq, this.cur.pf, t);
     if (F.qLevel) this.send(F.qLevel, this.cur.pl, t);
+    if (F.timeCV) this.send(F.timeCV, this.cur.tm, t);
+    if (F.speedCV) this.send(F.speedCV, this.cur.sp, t);
+    this.agit(this.val('g_agit') > 0, t);
   },
 
   send(o, x, t, force) {
@@ -2843,16 +3015,16 @@ const Strega = {
   // (Strega, son Sub qui sonne en continu, Fracture) ; START rouvre aux valeurs de l'etat
   silence(t) {
     const F = CFG.strega, when = t === undefined ? performance.now() : t;
-    this.env = []; this.tonOff = 0;
+    this.env = []; this.tonOff = 0; this.tonCalm = 0; this.tonPrev = null; this.tonG = null; this.swUp = null;
     this.send(F.act, 0, when, true);
     this.send(F.decay, 0, when, true);
     this.send(F.filter, 0, when, true);
     if (F.vcaS) this.send(F.vcaS, 0, when, true);
-    if (F.vcaF) this.send(F.vcaF, 0, when, true);
+    this.agit(false, when);
     this.lastT = null;
   },
 
-  onStart() { this.env = []; this.tonOff = 0; this.lastT = null; this.last = {}; },
+  onStart() { this.env = []; this.tonOff = 0; this.tonCalm = 0; this.tonPrev = null; this.tonG = null; this.swUp = null; this.lastT = null; this.last = {}; },
   onStop() { this.silence(); SGUI.show(); },
 
   // ---- memoire des valeurs reglees a l'oreille
@@ -3138,7 +3310,6 @@ const degNote = d => {
 // banc de test des sorties d'expander : une ligne par sortie (cle de description : b_l + n)
 const BENCH_LINES = [
   { n:  9, t: 'gate' },
-  { n: 10, t: 'cv', v: 0 },
   { n: 11, t: 'gate' },
   { n: 12, t: 'gate' },
   { n: 13, t: 'cv', v: 102 },
@@ -3150,7 +3321,6 @@ const BENCH_LINES = [
   { n: 19, t: 'cv', v: 0, regen: true },
   { n: 20, t: 'cv', v: 102, vol: true },
   { n: 21, t: 'cv', v: 64, cc: 25, mod: true },
-  { n: 22, t: 'cv', v: 2, mod: true },
   { n: 23, t: 'cv', v: 102, vol: true },
   { n: 24, t: 'cv', v: 102, vol: true }
 ];
@@ -3325,8 +3495,8 @@ const UI = {
   afTable() {
     const rows = [
       [1, 'af_1'], [2, 'af_2'], [3, 'af_3'], [4, 'af_4'], [5, 'af_5'], [6, 'af_6'], [7, 'af_7'], [8, 'af_8'],
-      [9, 'af_9'], ['11 / 12', 'af_11'], [13, 'af_13'], ['15 / 16', 'af_15'], ['10 / 14', 'af_10'],
-      [17, 'af_17'], ['18 / 19', 'af_18'], [20, 'af_20'], [21, 'af_21'], ['22 / 23', 'af_22'], [24, 'af_24'],
+      [9, 'af_9'], ['11 / 12', 'af_11'], [13, 'af_13'], ['15 / 16', 'af_15'], [10, 'af_10'], [14, 'af_14'],
+      [17, 'af_17'], ['18 / 19', 'af_18'], [20, 'af_20'], [21, 'af_21'], [22, 'af_22'], [23, 'af_23'], [24, 'af_24'],
       [25, 'af_25'], ['26 / 27', 'af_26'], ['28 / 29', 'af_28'], ['30 / 31', 'af_30'], [32, 'af_32'], [65, 'af_65']
     ];
     const name = n => {

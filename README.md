@@ -5,7 +5,7 @@ daily sunspot record, from 1818 to today: the drone, the percussion, the timbres
 and the form of the piece all come from the data.
 
 This repository contains the browser instrument that drives the rack:
-**`solar_rhythm_v001.html`** (version `SOLAR-v049`), available in **English and
+**`solar_rhythm_v001.html`** (version `SOLAR-v068`), available in **English and
 French** (FR / EN button, or `?lang=en` / `?lang=fr` in the address).
 Repository: [github.com/fdiba/solar_rhythm](https://github.com/fdiba/solar_rhythm).
 
@@ -24,18 +24,18 @@ Repository: [github.com/fdiba/solar_rhythm](https://github.com/fdiba/solar_rhyth
   | Voice | Module | Days that pass the test |
   |---|---|---|
   | kick | WMD Crater | local peaks of activity, above the 27-day mean |
-  | snare | WMD Kraken, played by the Strega from phase 2 | rises from one day to the next |
+  | snare | WMD Kraken, played by the Strega from phase 3 | rises from one day to the next |
   | Strega hits | Make Noise Strega | bursts above the 27-day mean |
-  | calm swells | Make Noise Strega (slow activation swells) | days ending a run of 7 or more spotless days, in state 1 only |
+  | calm swells | Make Noise Strega (slow activation swells) | days ending a run of 14 or more spotless days, in state 1 only |
 
   Every phrase of 8 bars, the page reads the 32 days the phrase will cover: the
   share of days that pass a voice's test sets its number of hits, capped by the
   state of the cycle, and the hits fill the positions of the voice's own loop
   (Crater 16 steps, Kraken 16 then 12, Strega 18, calm swells 32), so that the voices drift
   against one another. Each phase has its own percussive character: near minimum,
-  the Kraken alone, its hits repeated by the Strega, and slow Strega swells after a spotless week; then sparse tonal swells of
-  the Strega, which grow more frequent with the Kraken; then dry, dull Crater
-  knocks; at maximum, all voices with bright, short timbres. On bars 4 and 8 of
+  the Kraken alone, its hits repeated by the Strega, widely spaced drone notes, some of which bloom into a long reverb after a few spotless days, and slow Strega swells after two spotless weeks; then the Strega takes over
+  the Crater's drone notes (the Crater is muted), its tone colour sweeping back and forth, with the dry Kraken; then the same with a few Strega hits of its own, the Crater heard only in the reverb; then dry, dull Crater
+  knocks; at maximum, all voices with bright, short timbres, the Strega delay time drawing an arch over the phase and its agitation generator running faster on stronger days. On bars 4 and 8 of
   each phrase, each voice mutates: its least important hit moves to the position
   pointed to by the days of that bar. Caps and timbres per phase can be edited in
   the page.
@@ -67,25 +67,33 @@ Repository: [github.com/fdiba/solar_rhythm](https://github.com/fdiba/solar_rhyth
 | 1 | gate, channel 3, note 1 | WMD Crater `TRIG` (kick and drone) |
 | 2 | gate, channel 3, note 2 | WMD Kraken `HEAD` (snare) |
 | 3 | `direct control`, CC 3 channel 4 | WMD Kraken `SHELL` (set on every snare hit) |
-| 4 | `direct control`, CC 4 channel 4 | Intellijel Quad VCA `CV 2`: level of the Strega and its Sub before the Ruina |
+| 4 | `direct control`, CC 4 channel 4 | Intellijel Quad VCA `CV 2`: level of the Strega before the Ruina |
+| 5 | gate, channel 3, note 5 | Strega `Begin and End In` (agitation running, phase 5) |
 | 7 | MIDI/CV converter, channel 7 | WMD Crater `1V/oct` and, through a multiple, Strega `Tonic 1V/Oct` |
 | 8 | LFO, Base 96 × 3 | WMD Kraken `VELOCITY` |
 
 Expander outputs 9 to 24 drive the mix and effects (XAOC Hrad and Praga, Desmodus
 Versio): gates on channel 3 and `direct control`
-CVs on channel 4, note or CC = output number (output 21: CC 25). Output 32 drives the Strega `Absorb CV In` (CC 12, 0-10 V). Outputs 30 and 31 drive the Make Noise QPAS that filters the
+CVs on channel 4, note or CC = output number (output 21: CC 25). Output 32 drives the Strega `Absorb CV In` (CC 12, 0-10 V); output 22 its `Time CV In` and output 10 its agitation `Speed CV In` (0-5 V); the Strega `Agitation Function Out` is patched into its `Time Modulation Input`. Outputs 30 and 31 drive the Make Noise QPAS that filters the
 copy of the Kraken sent to the Strega (`FREQ1 CV`, CC 30; `Level CV`, CC 31). Output 25 drives the Ruina `Blend` CV input (CC 9, 0-5 V, dry in
 phase 1, wetter as the Sun rises). Outputs 26 to 29 of the third FHX-8CV drive the
-Strega `Activation`, `Decay`, `Filter` and `Tones` CV inputs (0-5 V, CC 26 to 29,
+Strega `Activation`, `Decay`, `Filter` and `Tones` CV inputs (0-5 V, `Tones` at 0-10 V, CC 26 to 29,
 14-bit). The full list is in the page, in the *Patching* and *Test bench*
 sections. All gates and clocks are set to 0-5 V.
 
-Audio: the Strega `Modular Level Output` goes to Praga channel 1 (pan centred); a
-copy of the Kraken output, low-pass filtered by a Make Noise QPAS, feeds its
-`External Substance In`, so that the Strega repeats the snare. Passive multiples
-copy the Kraken output into the Hrad `aux ins 3` and the Crater output into
-`aux ins 4` (pre-fader sends, so that the drone keeps sounding while the dry kick
-is muted).
+Audio: the Strega `Modular Level Output` goes through an Intellijel Quad VCA into a
+Noise Engineering Ruina Versio, whose outputs feed Praga channels 1 and 2 (panned
+hard left and right); a copy of the Kraken output, low-pass filtered by a Make Noise
+QPAS, feeds the Strega `External Substance In`, so that the Strega repeats the snare.
+A passive multiple copies the Kraken output into the Hrad `aux ins 3`; a Joranalogue
+Link 2 copies the Crater output into a Doepfer A-121-2 high-pass filter, then into
+`aux ins 4` (pre-fader sends: the drone level in the reverb does not depend on the
+dry level).
+
+Praga channels whose volume is set by the page (1 to 4): mode button **green**
+(unipolar) and `vol` knob **fully clockwise**, so that the control voltage alone sets
+the level (0 V silent, about 8 V at 0 dB). With the knob lower, or in bipolar mode
+(red), a channel set to 0 by the page still sounds.
 
 ## Data
 
@@ -110,7 +118,7 @@ Use the **Cite this repository** button (top right of the GitHub page): it reads
 [`CITATION.cff`](CITATION.cff) and gives the reference in APA and BibTeX.
 
 > Di Bartolo, F. (2026). *Solar Rhythm: the browser instrument of The 25th Cycle*
-> (version SOLAR-v049) [Computer software]. https://github.com/fdiba/solar_rhythm
+> (version SOLAR-v068) [Computer software]. https://github.com/fdiba/solar_rhythm
 
 When using the sunspot data, cite SILSO as well (see *Data* above).
 
