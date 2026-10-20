@@ -1,7 +1,7 @@
 # solar_rhythm
 
-*The sound and data processing of* The 25th Cycle *and* Solar Flares*, in the
-browser.*
+The sound and data processing of *The 25th Cycle* and *Solar Flares*, in the
+browser.
 
 *The 25th Cycle* (installation, since 2021) and *Solar Flares* (live performance,
 since 2019) are two audiovisual works driven by the solar cycle. In both, a
