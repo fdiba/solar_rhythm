@@ -1,12 +1,20 @@
-# The 25th Cycle
+# solar_rhythm
 
-*An audiovisual piece driven by the solar cycle.* A Eurorack system plays the
-daily sunspot record, from 1818 to today: the drone, the percussion, the timbres
-and the form of the piece all come from the data.
+*The sound and data processing of* The 25th Cycle *and* Solar Flares*, in the
+browser.*
 
-This repository contains the browser instrument that drives the rack:
-**`solar_rhythm_v001.html`** (version `SOLAR-v068`), available in **English and
-French** (FR / EN button, or `?lang=en` / `?lang=fr` in the address).
+*The 25th Cycle* (installation, since 2021) and *Solar Flares* (live performance,
+since 2019) are two audiovisual works driven by the solar cycle. In both, a
+Eurorack system plays the daily sunspot record, from 1818 to today: the drone, the
+percussion, the timbres and the form all come from the data.
+
+This repository contains a readable, executable translation of the sound and data
+processing the two works share: **`solar_rhythm_v001.html`** (version
+`SOLAR-v069`), a browser page that drives the same Eurorack system, available in
+**English and French** (FR / EN button, or `?lang=en` / `?lang=fr` in the
+address). It is not the works' Max/MSP program: the patches of the installation,
+which also recombine the cycle phase by phase and drive the image, are not
+included.
 Repository: [github.com/fdiba/solar_rhythm](https://github.com/fdiba/solar_rhythm).
 
 ## How it works
@@ -117,8 +125,8 @@ first day of the minimum month.
 Use the **Cite this repository** button (top right of the GitHub page): it reads
 [`CITATION.cff`](CITATION.cff) and gives the reference in APA and BibTeX.
 
-> Di Bartolo, F. (2026). *Solar Rhythm: the browser instrument of The 25th Cycle*
-> (version SOLAR-v068) [Computer software]. https://github.com/fdiba/solar_rhythm
+> Di Bartolo, F. (2026). *solar_rhythm: the sound and data processing of The 25th
+> Cycle and Solar Flares, in the browser* (version SOLAR-v069) [Computer software]. https://github.com/fdiba/solar_rhythm
 
 When using the sunspot data, cite SILSO as well (see *Data* above).
 

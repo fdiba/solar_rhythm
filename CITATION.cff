@@ -1,20 +1,23 @@
 cff-version: 1.2.0
 message: "If you use or refer to this work, please cite it as below."
 type: software
-title: "Solar Rhythm: the browser instrument of The 25th Cycle"
+title: "solar_rhythm: the sound and data processing of The 25th Cycle and Solar Flares, in the browser"
 abstract: >-
-  Browser instrument that turns the daily sunspot record (SILSO, 1818 to today)
-  into a drone, percussion, timbre and form for a Eurorack system, through Web
-  MIDI and an Expert Sleepers FH-2. A drone runs through every phase of the solar
+  Readable, executable translation of the sound and data processing shared by
+  the audiovisual works The 25th Cycle (installation) and Solar Flares (live
+  performance). The browser page turns the daily sunspot record (SILSO, 1818 to
+  today) into a drone, percussion, timbre and form for a Eurorack system, through
+  Web MIDI and an Expert Sleepers FH-2. A drone runs through every phase of the solar
   cycle; over it, each phase has its own percussion (Crater, Kraken and the hits
   of a Make Noise Strega), whose number of hits and timbre follow the data, each
-  voice on its own loop length. Part of the audiovisual piece The 25th Cycle.
+  voice on its own loop length. The Max/MSP patches of the installation, which
+  also recombine the cycle and drive the image, are not included.
 authors:
   - family-names: "Di Bartolo"
     given-names: "Florent"
     orcid: "https://orcid.org/0000-0002-4910-6936"
     affiliation: "Université Gustave Eiffel, LISAA"
-version: "SOLAR-v068"
+version: "SOLAR-v069"
 date-released: 2026-10-18
 license: CC-BY-NC-SA-4.0
 repository-code: "https://github.com/fdiba/solar_rhythm"

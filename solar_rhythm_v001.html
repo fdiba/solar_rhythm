@@ -216,7 +216,7 @@ section.rh{grid-column:1/-1}
   <h1>The 25th Cycle</h1>
   <span class="sub" data-i18n="sub"></span>
   <span class="langs"><button class="seg" data-lang="fr">FR</button><button class="seg" data-lang="en">EN</button></span>
-  <span class="ver">SOLAR-v068</span>
+  <span class="ver">SOLAR-v069</span>
 </header>
 
 <main>
@@ -534,7 +534,7 @@ section.rh{grid-column:1/-1}
 
 <script>
 /* =========================================================================
-   THE 25th CYCLE · SOLAR-v068 · solar_rhythm_v001.html
+   THE 25th CYCLE · SOLAR-v069 · solar_rhythm_v001.html
    Le rythme est fabrique a partir des donnees SILSO : une mesure = une fenetre
    de jours consecutifs, chaque voix frappe sur les jours qui passent son test.
 
@@ -571,7 +571,7 @@ section.rh{grid-column:1/-1}
 
 /* ---------------------------------------------------------------- config */
 const CFG = {
-  version: 'SOLAR-v068',
+  version: 'SOLAR-v069',
   bpm: 120,
   stepsPerMeasure: 16,      // une mesure = 16 pas = 16 jours de la fenetre
   sendClock: true,          // MIDI clock F8 / FA / FC : les horloges du FH-2 en dependent
@@ -763,8 +763,8 @@ const CFG = {
       { key: 's_fswell', v: [  0,  24,  24,  24,  24] },   // Filter : ouverture a chaque frappe, retombee comme l'activation
       { key: 's_tjit',   v: [  0,   0,   0,   8,   8] },   // Tones : ecart par frappe selon l'ecart du jour a sa moyenne 27 j
       { key: 's_att',    v: [  0,  20,   5,   0,   0] },   // montee d'une frappe, x 100 ms (0 = attaque instantanee) ; phase 2 : 2 s (SOLAR-v055)
-      { key: 's_rlong',  v: [  0,  60,  20,   0,   0] },   // retombee d'une frappe un jour faible, x 100 ms (0 = swellMs) ; phase 2 : 6 s
-      { key: 's_rshort', v: [  0,  40,  10,   0,   0] },   // retombee d'une frappe un jour fort, x 100 ms ; phase 2 : 4 s
+      { key: 's_rlong',  v: [  0,  60,   8,   0,   0] },   // phase 3 : 0,8 s (SOLAR-v069, 2 s avant)   // retombee d'une frappe un jour faible, x 100 ms (0 = swellMs) ; phase 2 : 6 s
+      { key: 's_rshort', v: [  0,  40,   4,   0,   0] },   // phase 3 : 0,4 s (SOLAR-v069, 1 s avant)   // retombee d'une frappe un jour fort, x 100 ms ; phase 2 : 4 s
       { key: 's_tglide', v: [  0,   8,   4,   0,   0] },   // mesures pour toute la course (du plancher a 127) ; vitesse constante, un aller plus court dure moins (SOLAR-v065)   // Tones : glissement lineaire vers la couleur suivante, en mesures (0 = pendant la montee) ; phase 2 : 4 (SOLAR-v056)
       { key: 's_tswing', v: [  0,   1,   1,   0,   0] },   // Tones : allers-retours (1 = oui) : chaque frappe vise l'autre bout de la course (SOLAR-v058)
       { key: 's_tmin',   v: [  0,  25,  25,   0,   0] },   // allers-retours (SOLAR-v065) : longueur minimale d'un aller, en % de la place disponible dans ce sens
@@ -784,7 +784,7 @@ const CFG = {
       { key: 'p_fspan',  v: [  0,  20,  20,  20,  20] },   // coupure : ecart total selon la moyenne 27 j
       { key: 'p_level',  out: 31, v: [127, 100, 100, 100, 100] }, // quantite de Kraken envoyee : pleine en phase 1, reduite ensuite
       // percussion : plafonds de frappes par boucle
-      { key: 's_hits',   voice: 'strega', max: true, v: [0, 0, 2, 5, 7] },   // phase 2 : 0, la Strega joue au rythme du Crater (SOLAR-v059)  // frappes de la Strega, des la phase 2
+      { key: 's_hits',   voice: 'strega', max: true, v: [0, 0, 1, 5, 7] },   // phase 3 : 1 (SOLAR-v069, 2 avant)   // phase 2 : 0, la Strega joue au rythme du Crater (SOLAR-v059)  // frappes de la Strega, des la phase 2
       { key: 's_kick',   voice: 'kick',  max: true, v: [0, 0, 0, 3, 3] },   // Crater sec (le drone joue partout)
       { key: 's_snare',  voice: 'snare', max: true, v: [1, 1, 2, 2, 3] },   // Kraken
       { key: 's_frac',   voice: 'fracture', max: true, v: [1, 0, 0, 0, 0] }, // gonflements calmes : 14 jours sans tache ou plus (SOLAR-v053), phase 1, boucle de 32 pas
@@ -2792,7 +2792,8 @@ const Strega = {
     const tau = rl > 0 ? rl - (rl - (rs || rl)) * q : F.swellMs[0] - (F.swellMs[0] - F.swellMs[1]) * q;
     this.env.push({ t, a, tau, ta, f: 0.6 + 0.4 * q });
     this.tonOff = this.val('s_tjit') / 127 * Mod.dayDev(d);
-    if (this.val('s_tswing') > 0) {                    // Tones : allers-retours, la frappe relance le glissement vers l'autre bout
+    // Tones : allers-retours ; la frappe ne relance un glissement que s'ils ne tournent pas seuls (s_tglide 0) (SOLAR-v069)
+    if (this.val('s_tswing') > 0 && !(this.val('s_tglide') > 0)) {
       const from = this.tonGlideAt(t);
       const gl = this.val('s_tglide');                // en mesures : glissement lineaire jusqu'a la suivante (SOLAR-v056)
       const S = this.swingTon(d, from);
