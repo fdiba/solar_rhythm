@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>solar_rhythm · The 25th Cycle · Solar Flares</title>
 <meta name="author" content="Florent Di Bartolo (ORCID 0000-0002-4910-6936)">
-<meta name="license" content="CC BY-NC-SA 4.0, https://creativecommons.org/licenses/by-nc-sa/4.0/">
-<link rel="license" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">
+<meta name="license" content="PolyForm Noncommercial 1.0.0, https://polyformproject.org/licenses/noncommercial/1.0.0">
+<link rel="license" href="https://polyformproject.org/licenses/noncommercial/1.0.0">
 <style>
 
 :root{
@@ -216,7 +216,7 @@ section.rh{grid-column:1/-1}
   <h1>solar_rhythm</h1>
   <span class="sub" data-i18n="sub"></span>
   <span class="langs"><button class="seg" data-lang="fr">FR</button><button class="seg" data-lang="en">EN</button></span>
-  <span class="ver">SOLAR-v069</span>
+  <span class="ver">SOLAR-v070</span>
 </header>
 
 <main>
@@ -534,7 +534,7 @@ section.rh{grid-column:1/-1}
 
 <script>
 /* =========================================================================
-   SOLAR_RHYTHM (The 25th Cycle, Solar Flares) · SOLAR-v069 · solar_rhythm_v001.html
+   SOLAR_RHYTHM (The 25th Cycle, Solar Flares) · SOLAR-v070 · solar_rhythm_v001.html
    Le rythme est fabrique a partir des donnees SILSO : une mesure = une fenetre
    de jours consecutifs, chaque voix frappe sur les jours qui passent son test.
 
@@ -560,8 +560,9 @@ section.rh{grid-column:1/-1}
 
    (c) 2026 Florent Di Bartolo, Universite Gustave Eiffel, LISAA,
    ORCID https://orcid.org/0000-0002-4910-6936.
-   Licence CC BY-NC-SA 4.0 : https://creativecommons.org/licenses/by-nc-sa/4.0/
-   (usage non commercial, citation obligatoire, partage dans les memes conditions).
+   Licence PolyForm Noncommercial 1.0.0 : https://polyformproject.org/licenses/noncommercial/1.0.0
+   (SPDX PolyForm-Noncommercial-1.0.0 ; usage non commercial, mention de l'auteur obligatoire).
+   Required Notice: Copyright 2026 Florent Di Bartolo (https://github.com/fdiba/solar_rhythm)
 
    Donnees : WDC-SILSO, Royal Observatory of Belgium, Brussels,
    DOI https://doi.org/10.24414/qnza-ac80 (licence CC BY-NC 4.0).
@@ -571,7 +572,7 @@ section.rh{grid-column:1/-1}
 
 /* ---------------------------------------------------------------- config */
 const CFG = {
-  version: 'SOLAR-v069',
+  version: 'SOLAR-v070',
   bpm: 120,
   stepsPerMeasure: 16,      // une mesure = 16 pas = 16 jours de la fenetre
   sendClock: true,          // MIDI clock F8 / FA / FC : les horloges du FH-2 en dependent
@@ -1291,7 +1292,7 @@ const TEXTS = {
     d_allok: 'tous les chiffres de référence sont retrouvés',
     d_hint: 'Données intégrées à la page (aucun chargement réseau, fonctionne en <code>file://</code>). Un fichier déposé les remplace et est mémorisé dans ce navigateur. Nouvelles données : <a href="https://www.sidc.be/SILSO/datafiles">sidc.be/SILSO/datafiles</a>.',
 
-    credit: AUTHOR_CREDIT + ', licence <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> : usage non commercial, citation obligatoire, partage dans les mêmes conditions. Données : nombre de taches solaires quotidien total, version 2.0. Source : ' + SILSO_CREDIT + ', licence <a href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY-NC 4.0</a>. The 25th Cycle, Solar Flares.'
+    credit: AUTHOR_CREDIT + ', licence <a href="https://polyformproject.org/licenses/noncommercial/1.0.0">PolyForm Noncommercial 1.0.0</a> : usage non commercial (étude personnelle, recherche, établissements d\'enseignement et de recherche, associations, institutions publiques), mention de l\'auteur obligatoire. Données : nombre de taches solaires quotidien total, version 2.0. Source : ' + SILSO_CREDIT + ', licence <a href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY-NC 4.0</a>. The 25th Cycle, Solar Flares.'
   },
 
   en: {
@@ -1464,7 +1465,7 @@ const TEXTS = {
     d_allok: 'all reference figures found',
     d_hint: 'Data embedded in the page (no network loading, works from <code>file://</code>). A dropped file replaces them and is stored in this browser. New data: <a href="https://www.sidc.be/SILSO/datafiles">sidc.be/SILSO/datafiles</a>.',
 
-    credit: AUTHOR_CREDIT + ', licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>: non-commercial use, attribution required, share alike. Data: total daily sunspot number, version 2.0. Source: ' + SILSO_CREDIT + ', licence <a href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY-NC 4.0</a>. The 25th Cycle, Solar Flares.'
+    credit: AUTHOR_CREDIT + ', licensed under the <a href="https://polyformproject.org/licenses/noncommercial/1.0.0">PolyForm Noncommercial License 1.0.0</a>: noncommercial use (personal study, research, educational and research institutions, charities, government institutions), the author\'s notice must be kept. Data: total daily sunspot number, version 2.0. Source: ' + SILSO_CREDIT + ', licence <a href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY-NC 4.0</a>. The 25th Cycle, Solar Flares.'
   }
 };
 

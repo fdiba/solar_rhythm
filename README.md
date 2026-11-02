@@ -10,7 +10,7 @@ percussion, the timbres and the form all come from the data.
 
 This repository contains a readable, executable translation of the sound and data
 processing the two works share: **`solar_rhythm_v001.html`** (version
-`SOLAR-v069`), a browser page that drives the same Eurorack system, available in
+`SOLAR-v070`), a browser page that drives the same Eurorack system, available in
 **English and French** (FR / EN button, or `?lang=en` / `?lang=fr` in the
 address). It is not the works' Max/MSP program: the patches of the installation,
 which also recombine the cycle phase by phase and drive the image, are not
@@ -126,23 +126,26 @@ Use the **Cite this repository** button (top right of the GitHub page): it reads
 [`CITATION.cff`](CITATION.cff) and gives the reference in APA and BibTeX.
 
 > Di Bartolo, F. (2026). *solar_rhythm: the sound and data processing of The 25th
-> Cycle and Solar Flares, in the browser* (version SOLAR-v069) [Computer software]. https://github.com/fdiba/solar_rhythm
+> Cycle and Solar Flares, in the browser* (version SOLAR-v070) [Computer software]. https://github.com/fdiba/solar_rhythm
 
 When using the sunspot data, cite SILSO as well (see *Data* above).
 
 ## License
 
-**[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)**, full
-text in [`LICENSE`](LICENSE). You may use, share and adapt this work under three
-conditions:
+**[PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0)**
+(SPDX `PolyForm-Noncommercial-1.0.0`), full text in [`LICENSE`](LICENSE). You may
+use, copy, modify and share the software for any noncommercial purpose, for example:
 
-- **Attribution**: credit the author and link to this repository and the license,
-  and indicate any changes;
-- **NonCommercial**: no commercial use;
-- **ShareAlike**: adaptations are shared under the same license.
+- personal study, research and experiment, hobby projects, without any anticipated
+  commercial application;
+- use by an educational institution, a public research organization, a charity, a
+  public health, safety or environmental protection organization, or a government
+  institution, whatever its source of funding.
 
-For any commercial use, contact the author. The embedded sunspot data keep their
-own license, CC BY-NC 4.0 (see *Data*).
+When you share it, with or without changes, pass on the license terms (or their
+address) and the `Required Notice:` line of [`LICENSE`](LICENSE). For any commercial
+use, contact the author. The embedded sunspot data keep their own license, CC BY-NC
+4.0 (see *Data*).
 
 ## Author
 
